@@ -1,0 +1,134 @@
+# CLAUDE.md
+
+Repo-level guidance for Claude Code working on this repo.
+
+## What this repo is
+
+A Claude Code **plugin marketplace** containing a single plugin (`ben-pr`) with four slash-command skills (`review-local`, `review-gh`, `fix`, `setup`). The persona library and rubric prereqs are **optimized for TypeScript + React + Vercel** codebases — JSX/TSX detection, Server Components, React 19 APIs, Tailwind, Vercel's Web Interface Guidelines, and Web3 (viem/wagmi/ethers) when present. It works on any project, but the conditional personas are tuned for the TS/React/Vercel stack.
+
+Users install via `/plugin marketplace add 0xbulma/claude-skills` → `/plugin install ben-pr@ben-claude-skills`. They invoke the skills as `/ben-pr:review-local`, `/ben-pr:review-gh`, `/ben-pr:fix`, `/ben-pr:setup`.
+
+## Mental model
+
+```
+.claude-plugin/marketplace.json
+        │
+        └─ lists ─→ plugins/ben-pr/
+                          │
+                          ├─ .claude-plugin/plugin.json
+                          ├─ skills/{review-local,review-gh,fix,setup}/SKILL.md
+                          ├─ lib/ben-pr-review-base.md   ← shared Steps 3–6
+                          ├─ personas/*.md               ← 10 versioned reviewers
+                          ├─ hooks/hooks.json            ← SessionStart auto-install
+                          └─ bin/install-prereqs.sh      ← idempotent prereq install
+```
+
+One-way arrow: skills delegate Steps 3–6 to `lib/`, which loops over `personas/`. Nothing points back up.
+
+## Rubric prereqs (auto-installed)
+
+18 external skills from the [skills.sh](https://skills.sh) registry serve as runtime rubric for the conditional personas (15 from Vercel, 2 community, plus tailwind/github-actions). They are *not* Claude Code plugin dependencies (the `dependencies` field in `plugin.json` only resolves other plugins) — they're standalone skills installed via `npx skills add`.
+
+| Skill | Source | Backs persona |
+|---|---|---|
+| `vercel-react-best-practices` | `vercel-labs/agent-skills` | `react-next-best-practices` |
+| `vercel-composition-patterns` | `vercel-labs/agent-skills` | `react-next-best-practices` |
+| `vercel-react-native-skills` | `vercel-labs/agent-skills` | `react-next-best-practices` (RN files only) |
+| `next-best-practices` | `vercel-labs/next-skills` | `react-next-best-practices` |
+| `next-cache-components` | `vercel-labs/next-skills` | `react-next-best-practices` |
+| `building-components` | `vercel/components.build` | `react-next-best-practices` + `ui-styling-accessibility` |
+| `web-design-guidelines` | `vercel-labs/agent-skills` | `ui-styling-accessibility` |
+| `tailwind-design-system` | `wshobson/agents` | `ui-styling-accessibility` |
+| `ai-elements` | `vercel/ai-elements` | `ai-sdk-best-practices` + `ui-styling-accessibility` |
+| `streamdown` | `vercel/streamdown` | `ai-sdk-best-practices` + `ui-styling-accessibility` |
+| `ai-sdk` | `vercel/ai` | `ai-sdk-best-practices` |
+| `turborepo` | `vercel/turborepo` | `ci-release-security` (turbo.json) |
+| `deploy-to-vercel` | `vercel-labs/agent-skills` | `ci-release-security` (vercel.json / deploy) |
+| `vercel-cli-with-tokens` | `vercel-labs/agent-skills` | `ci-release-security` (vercel CLI) |
+| `github-actions-docs` | `xixu-me/skills` | `ci-release-security` |
+| `agent-browser` | `vercel-labs/agent-browser` | utility (browser automation) |
+| `find-skills` | `vercel-labs/skills` | utility (skill discovery) |
+| `before-and-after` | `vercel-labs/before-and-after` | utility (visual diff) |
+
+Installation mechanism (in order of automation):
+
+1. **SessionStart hook** (`hooks/hooks.json`) — runs `bin/install-prereqs.sh` silently in the background every Claude Code session. Idempotent: skills already present at `~/.claude/skills/<name>/SKILL.md` are skipped. Failure on any one skill does not block the session.
+2. **Manual fallback** — `/ben-pr:setup` runs the same script with verbose output. Use this when the hook failed (no network at startup) or to verify install state.
+
+If a prereq is absent at review time, the consuming persona logs `Marketplace skill not found: <name> — degrading to persona's built-in rubric below` and falls through to the inline rubric in its body. No hard failure.
+
+## Local development loop
+
+```bash
+claude --plugin-dir ./plugins/ben-pr
+# inside Claude Code:
+/reload-plugins   # after edits
+```
+
+The SessionStart hook fires on each `claude` invocation, so prereqs install the first time you load the plugin locally too.
+
+## Path resolution inside `SKILL.md`
+
+- **Plugin-local files** (lib, personas, bin): use `${CLAUDE_PLUGIN_ROOT}/...`. The variable is set by Claude Code to the installed plugin's root directory.
+- **Rubric skills**: discover at run time via Bash:
+  ```bash
+  find ~/.claude -type f -name SKILL.md -path "*<skill-name>*" 2>/dev/null | head -1
+  ```
+  Catches both the plugin cache (`~/.claude/plugins/cache/...`) and the `npx skills` install location (`~/.claude/skills/<name>/SKILL.md`).
+
+## Versioning
+
+Three levels of versioning, all semver:
+
+1. **Plugin version** — `plugins/ben-pr/.claude-plugin/plugin.json` `version`. The release pin users see in `/plugin marketplace update`. Bump on every release.
+2. **Per-skill version** — `version:` in each `SKILL.md` frontmatter. Lets you ship a skill-level changelog without bumping the whole plugin.
+3. **Per-persona version** — `version:` in each `personas/*.md` frontmatter. Personas evolve fast; per-file versioning lets us track rubric drift independently.
+
+Semver rules:
+
+- **Patch** — prompt edits that don't change behavior.
+- **Minor** — new persona, new conditional flag, new prereq, new rubric section.
+- **Major** — trigger-flag rename, severity-grading change, or any breaking output-shape change.
+
+## Persona contract
+
+Every file in `plugins/ben-pr/personas/` has YAML frontmatter:
+
+```yaml
+---
+name: <slug>
+version: <semver>
+kind: baseline | conditional
+trigger: <FLAG_NAME>      # only for conditional, e.g. <HAS_WEB3>
+applies: |
+  <one-liner: where this persona's rules come from>
+out-of-scope:
+  - <what to defer to other personas, by name>
+focus: <one-line scope>
+severity-guidance: |
+  <how this persona calibrates severity>
+---
+```
+
+Adding a persona = drop a new file in `plugins/ben-pr/personas/`. If `kind: conditional`, also extend the flag-detection block in Step 4 of `plugins/ben-pr/lib/ben-pr-review-base.md`. No `plugin.json` edit needed.
+
+## Forking notes
+
+- **Per-org Web3 SDK**: extend the `<HAS_WEB3>` detector in `lib/ben-pr-review-base.md` Step 4 and `skills/fix/SKILL.md` Steps 4.5/5d.1/12 to include `@your-org/*`.
+- **Different prereq set**: edit the `PREREQS` heredoc in `bin/install-prereqs.sh`. Each line is `<install-target-name> <owner/repo@skill>`. The persona Bash `find` will discover whatever lands in `~/.claude/skills/<name>/`.
+
+## Testing
+
+```bash
+bats test/plugin.bats
+```
+
+Validates manifest shape, skill discovery, frontmatter (including the `version:` field), no leaked legacy paths, hook + bin presence, and (if `claude` CLI is on PATH) a local plugin-dir smoke install.
+
+## Common gotchas
+
+- **Don't put `commands/` or `skills/` inside `.claude-plugin/`.** Only `plugin.json` lives in `.claude-plugin/`.
+- **Don't reference files outside the plugin root** (`../shared-utils`). Plugins are copied to a cache; siblings won't come along.
+- **Don't reintroduce `<HOME>` template substitution.** The marketplace install model handles paths automatically.
+- **Don't try to declare rubric skills in `plugin.json` `dependencies`.** That field only resolves other plugins (different ecosystem from `npx skills`). Use the SessionStart hook + setup skill instead.
+- **`npx` consumes stdin** when called inside a `while read` loop — always pass `</dev/null` to the install command.

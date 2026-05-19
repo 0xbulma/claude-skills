@@ -1,110 +1,142 @@
 # claude-skills
 
-Personal Claude Code skills for PR review and PR fix workflows, plus the persona library they share. Repo-agnostic — works on any project.
+A Claude Code [plugin marketplace](https://code.claude.com/docs/en/plugin-marketplaces) for **TypeScript + React + Vercel**-optimized PR review and PR fix workflows. Ships one plugin (`ben-pr`) with four slash-command skills, a 10-persona review library, and a SessionStart hook that auto-installs 18 rubric skills (15 [Vercel-published](https://vercel.com/docs/agent-resources/skills) + 3 community) from the [skills.sh](https://skills.sh) registry.
+
+Works on any project — but the conditional personas are tuned for TS/JS/JSX/TSX codebases, with Vercel's `vercel-react-best-practices` / `web-design-guidelines` / `vercel-composition-patterns`, Tailwind, and Web3 (viem/wagmi/ethers) as runtime rubric.
 
 ## What's in here
 
 ```
 .
-├── README.md
-├── install.sh                  # symlink + template-substitute into ~/.agents/ and ~/.claude/skills/
-├── lib/
-│   └── ben-pr-review-base.md   # shared Step 3–6 base for the review skills
-├── personas/                   # one file per review focus area
-│   ├── code-quality.md             # baseline
-│   ├── silent-failure-hunter.md    # baseline
-│   ├── documentation.md            # baseline
-│   ├── test-coverage.md            # baseline
-│   ├── code-simplifier-performance.md  # baseline
-│   ├── web3-security.md            # conditional <HAS_WEB3>
-│   ├── react-next-best-practices.md  # conditional <HAS_REACT>
-│   ├── ui-styling-accessibility.md   # conditional <HAS_TAILWIND> OR <HAS_STYLING>
-│   └── ci-release-security.md      # conditional <HAS_CI_RELEASE>
-└── skills/
-    ├── ben-pr-review-gh/SKILL.md       # /ben-pr-review-gh — local PR review, posts as GitHub COMMENT
-    ├── ben-pr-review-local/SKILL.md    # /ben-pr-review-local — pre-PR local review, terminal-only
-    └── ben-pr-fix/SKILL.md             # /ben-pr-fix — apply review comments, resolve conflicts, watch
+├── .claude-plugin/
+│   └── marketplace.json
+├── plugins/ben-pr/
+│   ├── .claude-plugin/plugin.json
+│   ├── skills/
+│   │   ├── review-local/SKILL.md     # /ben-pr:review-local
+│   │   ├── review-gh/SKILL.md        # /ben-pr:review-gh <PR>
+│   │   ├── fix/SKILL.md              # /ben-pr:fix <PR>
+│   │   └── setup/SKILL.md            # /ben-pr:setup
+│   ├── lib/ben-pr-review-base.md     # shared review base
+│   ├── personas/*.md                 # 10 reviewers (5 baseline + 5 conditional)
+│   ├── hooks/hooks.json              # SessionStart auto-install
+│   ├── bin/install-prereqs.sh        # idempotent prereq installer
+│   └── README.md
+├── CLAUDE.md                         # guidance for Claude Code working in this repo
+└── test/plugin.bats                  # manifest + frontmatter validation
 ```
 
-## What the skills do
+## Skills
 
-- **`/ben-pr-review-local`** — pre-PR local review against the working tree (committed + uncommitted). Terminal-only output. `--fix` applies mechanical fixes inline.
-- **`/ben-pr-review-gh <PR>`** — review an open GitHub PR via the GraphQL API. Posts findings as a `COMMENT` review (never auto-approves). `--watch` re-runs on every new commit.
-- **`/ben-pr-fix <PR>`** — read unresolved review comments, classify (actionable / question / praise / stale / etc.), apply fixes with confidence gating, push, reply, resolve. `--watch` runs a cron-driven fix loop.
+- **`/ben-pr:review-local`** — pre-PR review on the working tree (committed + uncommitted). Terminal output. `--fix` applies mechanical fixes.
+- **`/ben-pr:review-gh <PR>`** — review an open GitHub PR via GraphQL. Posts findings as a `COMMENT` review (never auto-approves). `--watch` re-runs on every new commit.
+- **`/ben-pr:fix <PR>`** — read unresolved review comments, classify, apply confidence-gated fixes, push, reply, resolve. `--watch` runs a 2-minute cron fix loop.
+- **`/ben-pr:setup`** — manually install the rubric prereqs (also runs in the background on every session start).
 
-All three review skills delegate Steps 3–6 to `lib/ben-pr-review-base.md`, which loops over `personas/*.md`. Baseline personas always fire; conditional personas fire when their trigger flag is true (detected from the diff in Step 4).
+## Rubric prereqs (auto-installed)
 
-## Prerequisites
+18 external skills (15 [Vercel-published](https://vercel.com/docs/agent-resources/skills), 3 community) are installed automatically on first session after plugin install via a `SessionStart` hook. Idempotent — re-runs skip already-installed skills.
 
-The three conditional UI / Web3 personas load these Anthropic marketplace skills at run time as their domain rubric. Install them first:
+| Skill | Source | Domain | Persona it backs |
+|---|---|---|---|
+| `vercel-react-best-practices` | `vercel-labs/agent-skills` | React/Next.js perf | `react-next-best-practices` |
+| `vercel-composition-patterns` | `vercel-labs/agent-skills` | React composition | `react-next-best-practices` |
+| `vercel-react-native-skills` | `vercel-labs/agent-skills` | React Native + Expo | `react-next-best-practices` (RN files) |
+| `next-best-practices` | `vercel-labs/next-skills` | Next.js conventions, RSC | `react-next-best-practices` |
+| `next-cache-components` | `vercel-labs/next-skills` | Next.js 16 Cache Components | `react-next-best-practices` |
+| `building-components` | `vercel/components.build` | Composable UI components | `react-next-best-practices` + `ui-styling-accessibility` |
+| `web-design-guidelines` | `vercel-labs/agent-skills` | Vercel Web Interface Guidelines | `ui-styling-accessibility` |
+| `tailwind-design-system` | `wshobson/agents` | Tailwind v4, design tokens | `ui-styling-accessibility` |
+| `ai-elements` | `vercel/ai-elements` | AI chat UI components | `ai-sdk-best-practices` + `ui-styling-accessibility` |
+| `streamdown` | `vercel/streamdown` | Streaming Markdown renderer | `ai-sdk-best-practices` + `ui-styling-accessibility` |
+| `ai-sdk` | `vercel/ai` | Vercel AI SDK | `ai-sdk-best-practices` |
+| `turborepo` | `vercel/turborepo` | Monorepo build orchestration | `ci-release-security` |
+| `deploy-to-vercel` | `vercel-labs/agent-skills` | Vercel deployment | `ci-release-security` |
+| `vercel-cli-with-tokens` | `vercel-labs/agent-skills` | Vercel CLI / tokens | `ci-release-security` |
+| `github-actions-docs` | `xixu-me/skills` | GitHub Actions docs | `ci-release-security` |
+| `agent-browser` | `vercel-labs/agent-browser` | Browser automation | utility |
+| `find-skills` | `vercel-labs/skills` | Skill discovery | utility |
+| `before-and-after` | `vercel-labs/before-and-after` | Visual before/after diff | utility |
 
-```bash
-# In Claude Code (or via plugin install — your choice)
-# 1. vercel-react-best-practices
-# 2. vercel-composition-patterns
-# 3. tailwind-design-system
-```
+If any are missing at review time, the consuming persona logs a degradation warning and falls back to its inline rubric — no hard failure. Manual install: run `/ben-pr:setup` from Claude Code, or invoke `bin/install-prereqs.sh` directly.
 
-If any are missing, the corresponding conditional persona will log a "skill not loaded" warning and degrade to its built-in rubric.
+### Why not plugin `dependencies`?
 
-You also need:
+Claude Code's `plugin.json` `dependencies` field only resolves other **plugins** (in the marketplace ecosystem). The 18 rubric skills above live in the parallel [skills.sh](https://skills.sh) / `npx skills` ecosystem, so we install them via SessionStart hook + a verbose `/ben-pr:setup` skill instead.
+
+## Other prerequisites
 
 - `gh` CLI authenticated (`gh auth status`) — for the GitHub PR skills.
 - `git` ≥ 2.30 — for `--name-status --find-renames`.
+- `npx` (Node) — for the prereq installer.
 
 ## Install
 
+From inside Claude Code:
+
+```
+# 1. Add the marketplace (one-time)
+/plugin marketplace add 0xbulma/claude-skills
+
+# 2. Install the plugin (one-time)
+/plugin install ben-pr@ben-claude-skills
+
+# 3. Reload so the SessionStart hook fires
+/reload-plugins
+#    (or quit and start a new Claude Code session)
+#
+#    On first fire, the hook runs bin/install-prereqs.sh in the background,
+#    fetching the 18 rubric skills via `npx skills add`. First run takes
+#    ~30-90s. Subsequent sessions are instant (idempotent skip).
+
+# 4. Optional — verify install state, see one ✓ per skill
+/ben-pr:setup
+```
+
+Make sure `npx` (Node.js), `gh` (authenticated), and `git` ≥ 2.30 are on `PATH` before step 1 — see [Prerequisites](#other-prerequisites) below.
+
+### Local-only (without publishing)
+
+Test the plugin straight from a clone, no marketplace round-trip:
+
 ```bash
-git clone git@github.com:0xbulma/claude-skills.git
-cd claude-skills
-./install.sh
+claude --plugin-dir ./plugins/ben-pr
 ```
 
-`install.sh` does three things:
+The SessionStart hook fires the same way; the 18 rubric skills auto-install on session start.
 
-1. Creates `~/.agents/lib/` and `~/.agents/personas/` if they don't exist.
-2. Reads each file in `lib/` and `personas/`, substitutes `<HOME>` with your `$HOME`, and writes the result to `~/.agents/lib/` and `~/.agents/personas/`.
-3. Same for each `skills/<name>/SKILL.md` → `~/.claude/skills/<name>/SKILL.md`.
-
-> **Why copy-with-substitute instead of plain symlinks?** Sub-agents that Claude Code spawns receive prompts with paths inside; if they say `~/...` the sub-agent's Read tool may not expand the tilde. Copy-with-substitution writes the absolute `$HOME`-resolved path so sub-agents can `Read` them directly. Re-run `./install.sh` after pulling repo updates.
-
-## How to update
-
-Edit files in this repo. Then:
-
-```bash
-./install.sh        # re-sync ~/.agents/ and ~/.claude/skills/
-```
-
-For changes to the personas or the shared base, no skill restart is needed — Claude reads each file fresh on every review run.
-
-## Architecture (one-screen mental model)
+## Update
 
 ```
-~/.claude/skills/ben-pr-review-{gh,local}/SKILL.md
-                       │
-                       └─→ delegates Steps 3–6 to ──┐
-                                                    │
-~/.claude/skills/ben-pr-fix/SKILL.md                │
-                       │                            │
-                       │                            v
-                       │              ~/.agents/lib/ben-pr-review-base.md
-                       │                            │
-                       │                            └─→ loops over ──┐
-                       │                                             │
-                       │                                             v
-                       │                          ~/.agents/personas/*.md
-                       │                                  (9 files)
-                       │                                             │
-                       │                                             └─→ when conditional,
-                       │                                                   load marketplace
-                       │                                                   skill rubric
-                       │
-                       └─→ uses persona rubrics for its own confidence gate (Step 6a)
+/plugin marketplace update ben-claude-skills
 ```
 
-The pattern is one-way: skills depend on the lib, the lib loops over personas, personas may load marketplace skills as runtime rubric. Nothing points back up.
+The plugin's `version` field in `plugins/ben-pr/.claude-plugin/plugin.json` controls when users see a new release. Each `SKILL.md` and persona also has its own `version:` field for per-file change tracking.
+
+## Local development
+
+After editing any file under `plugins/ben-pr/`, run `/reload-plugins` inside Claude Code to pick up changes — no restart needed. Run `bats test/plugin.bats` to validate manifest, frontmatter, version fields, and hook wiring (17 cases).
+
+See [CLAUDE.md](./CLAUDE.md) for the full mental model, persona contract, versioning rules, and forking notes.
+
+## Personas
+
+5 baseline (always fire):
+
+- `code-quality` — type discipline, code smells, naming, security primitives.
+- `silent-failure-hunter` — swallowed errors, missing error states, dead code paths.
+- `documentation` — JSDoc/TSDoc on exports, Markdown accuracy, pointer integrity.
+- `test-coverage` — missing tests, layout enforcement.
+- `code-simplifier-performance` — unnecessary complexity, redundant logic, perf.
+
+5 conditional (fire only when their flag matches the diff):
+
+- `react-next-best-practices` — `<HAS_REACT>` — Server Components, hooks, React 19 APIs, Next.js conventions, Cache Components. Loads `vercel-react-best-practices`, `vercel-composition-patterns`, `next-best-practices`, `next-cache-components`, `building-components` (+ `vercel-react-native-skills` when RN code detected).
+- `ui-styling-accessibility` — `<HAS_TAILWIND> OR <HAS_STYLING>` — Tailwind, a11y, design tokens. Loads `tailwind-design-system`, `web-design-guidelines`, `building-components` (+ `ai-elements`/`streamdown` when their imports are present).
+- `ai-sdk-best-practices` — `<HAS_AI_SDK>` — Vercel AI SDK usage, streaming, tool calls, structured output, useChat. Loads `ai-sdk`, `ai-elements`, `streamdown`.
+- `web3-security` — `<HAS_WEB3>` — contract calls, permits, chainId validation, signature handling.
+- `ci-release-security` — `<HAS_CI_RELEASE>` — workflow injection, action pinning, lockfile drift, publish-flow. Loads `github-actions-docs`, `turborepo`, `deploy-to-vercel`, `vercel-cli-with-tokens`.
 
 ## License
 
-MIT — fork, adapt, re-use freely. See [LICENSE](./LICENSE) if present.
+MIT — fork, adapt, re-use freely. See [LICENSE](./LICENSE).

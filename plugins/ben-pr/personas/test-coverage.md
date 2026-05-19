@@ -1,5 +1,6 @@
 ---
 name: test-coverage
+version: 1.0.0
 kind: baseline
 applies: |
   The project's testing spec (typically AGENTS.md / CLAUDE.md, look for a Testing

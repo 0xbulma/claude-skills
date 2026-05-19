@@ -1,5 +1,6 @@
 ---
 name: react-next-best-practices
+version: 1.0.0
 kind: conditional
 trigger: <HAS_REACT>
 applies: |
@@ -12,10 +13,14 @@ out-of-scope:
   - Test coverage for React components — see test-coverage.
 focus: React / Next.js patterns — Server Components, `'use client'` discipline, hooks, effects, composition, React 19 APIs.
 canonical-rules: |
-  Marketplace skills:
-   - <HOME>/.claude/skills/vercel-react-best-practices/SKILL.md
-   - <HOME>/.claude/skills/vercel-composition-patterns/SKILL.md
-  Read both in full at run time and use as the rubric.
+  Marketplace skills (discover paths at run time — see Run-time setup below):
+   - vercel-react-best-practices    (React/Next.js perf)
+   - vercel-composition-patterns    (React composition patterns)
+   - next-best-practices            (Next.js file conventions, RSC boundaries, data patterns)
+   - next-cache-components          (Next.js 16 Cache Components — PPR, use cache, cacheLife)
+   - building-components            (composable, accessible component design)
+   - vercel-react-native-skills     (only loaded when React Native code is detected)
+  Read every loaded rubric in full at run time and use as the combined rubric.
 ---
 
 # React / Next Best Practices
@@ -24,12 +29,25 @@ Fires when the diff touches React / Next code (`.jsx` / `.tsx` extension; import
 
 ## Run-time setup (MUST do first, in this order)
 
-1. Read `<HOME>/.claude/skills/vercel-react-best-practices/SKILL.md` in full (Read tool, absolute path).
-2. Read `<HOME>/.claude/skills/vercel-composition-patterns/SKILL.md` in full (Read tool, absolute path).
-3. Use the contents of those two files as the rubric for the review.
-4. After reading both files, print two log lines: `Loaded conditional skill: vercel-react-best-practices` and `Loaded conditional skill: vercel-composition-patterns`.
+Discover the rubric SKILL.md paths via Bash:
 
-If either file is missing (e.g. the user hasn't installed the marketplace skill), log a single warning `Marketplace skill not found: <name> — degrading to persona's built-in rubric below` and continue with the built-in rubric.
+```bash
+REACT_RUBRIC=$(find ~/.claude -type f -name SKILL.md -path "*vercel-react-best-practices*" 2>/dev/null | head -1)
+COMP_RUBRIC=$(find ~/.claude -type f -name SKILL.md -path "*vercel-composition-patterns*" 2>/dev/null | head -1)
+NEXT_RUBRIC=$(find ~/.claude -type f -name SKILL.md -path "*next-best-practices*" 2>/dev/null | head -1)
+NEXT_CACHE_RUBRIC=$(find ~/.claude -type f -name SKILL.md -path "*next-cache-components*" 2>/dev/null | head -1)
+BUILD_COMP_RUBRIC=$(find ~/.claude -type f -name SKILL.md -path "*building-components*" 2>/dev/null | head -1)
+
+# React Native rubric is only relevant when the touched files import react-native or expo.
+# Detect via the diff: presence of `from 'react-native'`, `from 'expo'`, `from 'expo-*'`, or `.native.tsx` files.
+if grep -lE "from ['\"]react-native|from ['\"]expo|\\.native\\.(tsx?|jsx?)" <CHANGED_FILES> >/dev/null 2>&1; then
+  RN_RUBRIC=$(find ~/.claude -type f -name SKILL.md -path "*vercel-react-native-skills*" 2>/dev/null | head -1)
+fi
+```
+
+For each of `REACT_RUBRIC`, `COMP_RUBRIC`, `NEXT_RUBRIC`, `NEXT_CACHE_RUBRIC`, `BUILD_COMP_RUBRIC` (and `RN_RUBRIC` when set), if the variable is non-empty, Read the file in full and print `Loaded conditional skill: <name>`. For each that resolved empty, print `Marketplace skill not found: <name> — degrading to persona's built-in rubric below` and continue.
+
+Use the contents of whichever rubric files loaded — plus this persona's built-in rubric below — as the combined review criteria.
 
 ## Review focus (apply with the rubric above)
 

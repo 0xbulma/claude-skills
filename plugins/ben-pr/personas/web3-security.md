@@ -1,5 +1,6 @@
 ---
 name: web3-security
+version: 1.0.0
 kind: conditional
 trigger: <HAS_WEB3>
 applies: |

@@ -1,5 +1,6 @@
 ---
 name: ci-release-security
+version: 1.0.0
 kind: conditional
 trigger: <HAS_CI_RELEASE>
 applies: |
@@ -27,6 +28,25 @@ severity-guidance: |
 # CI / Release Security
 
 The trust boundary that ships our code. CI runs with privileged tokens; releases push artifacts under the org's identity. A bad workflow merge can leak secrets, run attacker code on a maintainer's box, or publish a poisoned package. This persona reviews diffs that touch that surface.
+
+## Run-time setup
+
+Discover supplemental rubric skills via Bash. Each provides authoritative docs the persona uses on top of its own rubric:
+
+```bash
+GHA_RUBRIC=$(find ~/.claude -type f -name SKILL.md -path "*github-actions-docs*" 2>/dev/null | head -1)
+
+# Conditional on the diff touching Turborepo / Vercel deploy surface.
+if grep -lE "turbo\\.json|from ['\"]turbo|\"turbo\":" <CHANGED_FILES> >/dev/null 2>&1; then
+  TURBO_RUBRIC=$(find ~/.claude -type f -name SKILL.md -path "*turborepo*" 2>/dev/null | head -1)
+fi
+if grep -lE "vercel\\.json|vercel (deploy|--prod|env|projects)" <CHANGED_FILES> >/dev/null 2>&1; then
+  DEPLOY_RUBRIC=$(find ~/.claude -type f -name SKILL.md -path "*deploy-to-vercel*" 2>/dev/null | head -1)
+  VERCEL_CLI_RUBRIC=$(find ~/.claude -type f -name SKILL.md -path "*vercel-cli-with-tokens*" 2>/dev/null | head -1)
+fi
+```
+
+For each rubric variable that resolves to a non-empty path, Read the file in full and print `Loaded conditional skill: <name>`. For each that resolved empty, log `Marketplace skill not found: <name> — degrading to persona's built-in rubric below` and continue with the inline rubric.
 
 ## Trigger
 

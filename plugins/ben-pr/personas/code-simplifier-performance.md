@@ -1,5 +1,6 @@
 ---
 name: code-simplifier-performance
+version: 1.0.0
 kind: baseline
 applies: |
   The project's spec on code style and performance (commonly AGENTS.md / CLAUDE.md

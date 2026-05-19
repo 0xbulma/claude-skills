@@ -1,6 +1,7 @@
 ---
-name: ben-pr-fix
-description: Apply fixes for PR review findings and resolve merge conflicts. Reads unresolved review comments from a pull request, applies the fixes locally, detects and resolves merge conflicts with the base branch, commits, pushes, and resolves the threads. Use when user says /ben-pr-fix, "fix PR comments", "apply review fixes", "address PR feedback", or "fix conflicts". Takes a PR number as argument.
+name: fix
+version: 1.0.0
+description: Apply fixes for PR review findings and resolve merge conflicts. Reads unresolved review comments from a pull request, applies the fixes locally, detects and resolves merge conflicts with the base branch, commits, pushes, and resolves the threads. Use when user says /ben-pr:fix, "fix PR comments", "apply review fixes", "address PR feedback", or "fix conflicts". Takes a PR number as argument.
 ---
 
 # PR Fix — Apply Review Findings & Resolve Conflicts
@@ -10,15 +11,15 @@ Apply fixes for unresolved PR review comments, resolve merge conflicts with the 
 ## Usage
 
 ```
-/ben-pr-fix <pr-number>
-/ben-pr-fix <pr-number> --watch
+/ben-pr:fix <pr-number>
+/ben-pr:fix <pr-number> --watch
 ```
 
 ## Examples
 
 ```
-/ben-pr-fix 123
-/ben-pr-fix 456 --watch
+/ben-pr:fix 123
+/ben-pr:fix 456 --watch
 ```
 
 ## Arguments
@@ -80,7 +81,7 @@ git status --porcelain
 
 If there are uncommitted changes, warn the user and abort the skill entirely:
 ```
-Working tree is not clean. Please commit or stash your changes before running /ben-pr-fix.
+Working tree is not clean. Please commit or stash your changes before running /ben-pr:fix.
 ```
 
 ### 2b: Fetch and checkout the PR branch
@@ -242,7 +243,7 @@ For each unique package directory among the files with unresolved comments, read
 
 Detect from the codebase (not just the diff — fixes may need to read non-diff files):
 
-- `<HAS_WEB3>` — true if any file in the repo (focus on files with unresolved comments and their imports) imports `viem`, `wagmi`, `ethers`, `@morpho-org/*`, or contains contract address constants (`0x[a-fA-F0-9]{40}`) or contract interaction patterns (`useContractRead`, `useContractWrite`, `readContract`, `writeContract`, `simulateContract`).
+- `<HAS_WEB3>` — true if any file in the repo (focus on files with unresolved comments and their imports) imports `viem`, `wagmi`, `ethers` (extend this union with any project-specific Web3 SDK imports — e.g. `@your-org/*`), or contains contract address constants (`0x[a-fA-F0-9]{40}`) or contract interaction patterns (`useContractRead`, `useContractWrite`, `readContract`, `writeContract`, `simulateContract`).
 - `<HAS_REACT>` — true if any file with an unresolved comment has extension `.jsx`/`.tsx`, OR imports `react`, `react-dom`, `next/*`, `@tanstack/react-*`, `@apollo/client`, OR contains `'use client'` / `'use server'` directives.
 - `<HAS_TAILWIND>` — true if `<HAS_REACT>` AND any file with an unresolved comment contains a Tailwind-shaped class string in JSX.
 
@@ -327,7 +328,7 @@ When `<HAS_WEB3>` is true (from Step 4.5), bump severity to **CRITICAL** for any
 
 - A contract address constant (`0x[a-fA-F0-9]{40}`).
 - Hex calldata (`0x[a-fA-F0-9]{8,}`) outside an obvious test fixture.
-- An import of `viem`, `wagmi`, `ethers`, or `@morpho-org/*` adjacent to the commented line.
+- An import of `viem`, `wagmi`, `ethers`, or any project-specific Web3 SDK adjacent to the commented line.
 - A contract interaction call (`readContract`, `writeContract`, `simulateContract`, `useContractRead`, `useContractWrite`, `signTypedData`, `permit*`).
 
 Exception: if the comment language clearly says **"nit"**, **"consider"**, **"optional"**, or **"style"**, do NOT bump — keep the parsed severity. The bump is for substantive comments touching contract surface area.
@@ -386,28 +387,32 @@ For each file with findings, build a complete understanding:
    grep -rn "<symbol_being_changed>" --include="*.ts" --include="*.tsx"
    ```
 
-5. **Conditional skill rubrics** — When the file under repair has framework/domain signals, additionally Read these skill files at run time and use their contents as part of the rubric for the confidence gate (Step 6b):
+5. **Conditional skill rubrics** — When the file under repair has framework/domain signals, additionally Read these skill files at run time and use their contents as part of the rubric for the confidence gate (Step 6b). Plugin-installed marketplace skills land in a versioned cache; discover the path via Bash before Reading:
+
+   ```bash
+   # Returns the first matching SKILL.md across the plugin cache and the legacy standalone skill dir.
+   find_skill() { find ~/.claude -type f -name SKILL.md -path "*$1*" 2>/dev/null | head -1; }
+   ```
 
    - **React/Next** (file is `.jsx`/`.tsx` or imports `react`/`react-dom`/`next/*`):
-     - Read `<HOME>/.claude/skills/vercel-react-best-practices/SKILL.md`
-     - Read `<HOME>/.claude/skills/vercel-composition-patterns/SKILL.md`
-     - After reading, print: `Loaded conditional skill: vercel-react-best-practices` and `Loaded conditional skill: vercel-composition-patterns`.
+     - `REACT_RUBRIC=$(find_skill vercel-react-best-practices)`; if non-empty, Read `$REACT_RUBRIC`.
+     - `COMP_RUBRIC=$(find_skill vercel-composition-patterns)`; if non-empty, Read `$COMP_RUBRIC`.
+     - For each that loaded, print `Loaded conditional skill: <name>`. For each that resolved empty, print `Marketplace skill not found: <name> — degrading to inline rubric` and continue without that rubric.
 
    - **Tailwind** (file contains Tailwind-shaped class strings in JSX):
-     - Read `<HOME>/.claude/skills/tailwind-design-system/SKILL.md`
-     - After reading, print: `Loaded conditional skill: tailwind-design-system`.
+     - `TW_RUBRIC=$(find_skill tailwind-design-system)`; if non-empty, Read `$TW_RUBRIC` and print `Loaded conditional skill: tailwind-design-system`. If empty, log the degradation message and continue.
 
    - **Web3** (`<HAS_WEB3>` is true and file imports a contract-interaction library — `viem`, `wagmi`, `ethers`, or a project-specific web3 SDK — or contains contract addresses/calldata):
      - Re-read the Web3 portion of `<PROJECT_CONTEXT>` plus any `SECURITY.md` / `audits/*.md` discovered.
-     - Use `<HOME>/.agents/personas/web3-security.md` as the rubric for the confidence gate.
+     - Use `${CLAUDE_PLUGIN_ROOT}/personas/web3-security.md` as the rubric for the confidence gate.
 
    - **CI / release files** (fix touches `.github/workflows/**`, `.github/actions/**`, `.changeset/**`, `pnpm-lock.yaml` / `package-lock.json` / `yarn.lock`, `pnpm-workspace.yaml`, `.npmrc`, or a `package.json` `scripts.*publish*` / `scripts.*release*` field):
      - If the target repo defines its own CI/release rules (look for a `Review automation` / `CI/release security` / `Release` section in the root `AGENTS.md` / `CLAUDE.md`, or a dedicated `docs/security/` / `SECURITY.md`), read that section first — it is authoritative.
-     - Otherwise (or in addition) use `<HOME>/.agents/personas/ci-release-security.md` as the rubric: workflow injection, action pinning, write-token hardening, lockfile drift, publish-flow integrity, `.npmrc` hygiene.
+     - Otherwise (or in addition) use `${CLAUDE_PLUGIN_ROOT}/personas/ci-release-security.md` as the rubric: workflow injection, action pinning, write-token hardening, lockfile drift, publish-flow integrity, `.npmrc` hygiene.
 
    - **Persona / spec-layering files** (fix touches `AGENTS.md` / `CLAUDE.md` itself, or any file under `.agents/personas/` / `.claude/agents/` / similar):
      - If the target repo uses a persona system (look for `.agents/personas/` or `.claude/agents/` and any `> Applied by personas: …` callouts in the spec), the bidirectional-backlink invariant applies: changes to a persona's `applies:` frontmatter must atomically update the corresponding callout in the spec, and vice versa. A one-sided fix is incomplete.
-     - Use `<HOME>/.agents/personas/documentation.md` (sections 3–4) as the rubric.
+     - Use `${CLAUDE_PLUGIN_ROOT}/personas/documentation.md` (sections 3–4) as the rubric.
 
    These rubrics inform the confidence gate. Example: a comment saying "wrap this in `useMemo`" on code inside a Server Component is a HIGH→LOW confidence drop because the vercel-react-best-practices rubric flags `useMemo` as not applicable in Server Components — skip the fix and reply explaining why.
 
@@ -759,7 +764,7 @@ CYCLE START:
    b. Check freshness: Read the file at the commented path+line. Does the referenced code still exist and match what the reviewer commented on? If the code has changed significantly, classify as stale — reply explaining the code has changed and leave for human review.
    c. Check if already addressed: Is the issue described in the comment already fixed in the current code? If yes, reply noting it's already addressed and resolve the thread.
    d. Confidence gate: For remaining actionable comments, read the file AND related files (imports, callers, type definitions) to build sufficient context. Only proceed with fixes where you have HIGH or MEDIUM confidence. For LOW confidence (ambiguous suggestion, unclear side effects, insufficient context), skip and reply explaining what's unclear.
-   e. PROJECT CONTEXT (re-discover per cycle): Read AGENTS.md (or CLAUDE.md fallback) at root, plus per-package AGENTS.md walkup for files with unresolved comments. Compute conditional flags: HAS_WEB3 (viem/wagmi/ethers/@morpho-org/* imports or contract address constants in commented files), HAS_REACT (.jsx/.tsx or react/next imports in commented files), HAS_TAILWIND (Tailwind class strings in JSX). When a flag is true and the file under repair matches, additionally Read <HOME>/.claude/skills/vercel-react-best-practices/SKILL.md, <HOME>/.claude/skills/vercel-composition-patterns/SKILL.md, or <HOME>/.claude/skills/tailwind-design-system/SKILL.md as the rubric for the confidence gate. Print one log line per skill loaded: "Loaded conditional skill: <name>".
+   e. PROJECT CONTEXT (re-discover per cycle): Read AGENTS.md (or CLAUDE.md fallback) at root, plus per-package AGENTS.md walkup for files with unresolved comments. Compute conditional flags: HAS_WEB3 (viem/wagmi/ethers imports — extend per project with org-specific Web3 SDK imports — or contract address constants in commented files), HAS_REACT (.jsx/.tsx or react/next imports in commented files), HAS_TAILWIND (Tailwind class strings in JSX). When a flag is true and the file under repair matches, additionally discover and Read the marketplace rubric SKILL.md via Bash: `find ~/.claude -type f -name SKILL.md -path "*<skill-name>*" 2>/dev/null | head -1` for each of `vercel-react-best-practices`, `vercel-composition-patterns`, `tailwind-design-system`. If the path resolves non-empty, Read it and print "Loaded conditional skill: <name>"; otherwise print "Marketplace skill not found: <name> — degrading to inline rubric" and continue.
    f. WEB3 SEVERITY BUMP: When HAS_WEB3 and a comment touches contract addresses, hex calldata, or Web3 imports, bump severity to CRITICAL unless the comment language is "nit"/"consider"/"optional"/"style".
 
    **Never apply a fix you don't fully understand. A skipped finding is always better than a wrong fix.**
@@ -816,7 +821,7 @@ CYCLE END — the cron scheduler will run this again in 2 minutes.
 - **Conflict-aware**: Detects merge conflicts with the base branch before applying review fixes. Resolves conflicts intelligently by reading both sides and merging logically. Conflicts that can't be safely resolved are reported for human intervention.
 - **Quality gates**: Discovers and runs project linters/formatters after each file fix and broader quality checks (typecheck, lint) after all fixes. Ensures fixes don't introduce new issues.
 - **Self-contained watcher**: The cron watcher does actual work inline (resolves conflicts, applies fixes, replies to threads, resolves threads) rather than re-invoking the skill. This avoids recursive watcher creation and ensures each cron tick is a complete fix cycle. The watcher also performs relevance assessment on every cycle — it never blindly fixes.
-- **Pairs with `/ben-pr-review`**: `/ben-pr-review` posts findings (from parallel Claude agents + optional Codex), `/ben-pr-fix` applies fixes. With both using `--watch`, they form a fully autonomous review-fix loop.
+- **Pairs with `/ben-pr:review-gh`**: `/ben-pr:review-gh` posts findings (from parallel Claude agents + optional Codex), `/ben-pr:fix` applies fixes. With both using `--watch`, they form a fully autonomous review-fix loop.
 - Fixes are applied to the PR branch, not main/dev
 - One commit for all fixes — keeps the PR history clean
 - Each reply includes the commit SHA for traceability

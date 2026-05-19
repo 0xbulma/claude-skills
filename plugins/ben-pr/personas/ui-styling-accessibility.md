@@ -1,5 +1,6 @@
 ---
 name: ui-styling-accessibility
+version: 1.0.0
 kind: conditional
 trigger: <HAS_TAILWIND> OR <HAS_STYLING>
 applies: |
@@ -14,8 +15,12 @@ focus: |
   project uses Tailwind; general styling-architecture concerns (mixed approaches,
   design-token consistency) always; a11y always.
 canonical-rules: |
-  Marketplace skill (when <HAS_TAILWIND>):
-   - <HOME>/.claude/skills/tailwind-design-system/SKILL.md
+  Marketplace skills (discover paths at run time — see Run-time setup):
+   - tailwind-design-system   (Tailwind v4 — when <HAS_TAILWIND>)
+   - web-design-guidelines    (Vercel Web Interface Guidelines — always)
+   - building-components      (composable, accessible component design)
+   - ai-elements              (chat UI components — when AI Elements imports detected)
+   - streamdown               (streaming Markdown UI — when streamdown imports detected)
 ---
 
 # UI / Styling & Accessibility
@@ -24,8 +29,28 @@ Fires when the diff touches Tailwind class strings in JSX or imports a styling l
 
 ## Run-time setup
 
-1. **If `<HAS_TAILWIND>` is true:** Read `<HOME>/.claude/skills/tailwind-design-system/SKILL.md` in full and use its contents as the styling rubric. Print: `Loaded conditional skill: tailwind-design-system`. If the file is missing, log `Marketplace skill not found: tailwind-design-system — degrading to persona's built-in rubric below` and continue.
-2. **Always** cover accessibility and styling-consistency concerns below.
+Discover marketplace rubric paths via Bash. Two are always relevant; three are conditionally relevant based on file content:
+
+```bash
+TW_RUBRIC=$(find ~/.claude -type f -name SKILL.md -path "*tailwind-design-system*" 2>/dev/null | head -1)
+WDG_RUBRIC=$(find ~/.claude -type f -name SKILL.md -path "*web-design-guidelines*" 2>/dev/null | head -1)
+BUILD_COMP_RUBRIC=$(find ~/.claude -type f -name SKILL.md -path "*building-components*" 2>/dev/null | head -1)
+
+# Conditional on imports in the diff.
+if grep -lE "from ['\"]ai-elements|from ['\"]@ai-sdk/react/elements" <CHANGED_FILES> >/dev/null 2>&1; then
+  AI_ELEMENTS_RUBRIC=$(find ~/.claude -type f -name SKILL.md -path "*ai-elements*" 2>/dev/null | head -1)
+fi
+if grep -lE "from ['\"]streamdown" <CHANGED_FILES> >/dev/null 2>&1; then
+  STREAMDOWN_RUBRIC=$(find ~/.claude -type f -name SKILL.md -path "*streamdown*" 2>/dev/null | head -1)
+fi
+```
+
+1. **If `<HAS_TAILWIND>` is true** and `$TW_RUBRIC` is non-empty, Read it and print `Loaded conditional skill: tailwind-design-system`. If empty, log degradation and continue.
+2. **Always**: if `$WDG_RUBRIC` is non-empty, Read it and print `Loaded conditional skill: web-design-guidelines`. If empty, log degradation.
+3. **Always**: if `$BUILD_COMP_RUBRIC` is non-empty, Read it and print `Loaded conditional skill: building-components`. If empty, log degradation.
+4. **If `AI_ELEMENTS_RUBRIC` was set and is non-empty**, Read it and print `Loaded conditional skill: ai-elements`.
+5. **If `STREAMDOWN_RUBRIC` was set and is non-empty**, Read it and print `Loaded conditional skill: streamdown`.
+6. **Always** cover accessibility and styling-consistency concerns below.
 
 ## Accessibility (always reviewed by this agent)
 

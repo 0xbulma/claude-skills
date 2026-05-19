@@ -1,5 +1,6 @@
 ---
 name: silent-failure-hunter
+version: 1.0.0
 kind: baseline
 applies: |
   The project's spec on error-handling and testability (look for AGENTS.md / CLAUDE.md

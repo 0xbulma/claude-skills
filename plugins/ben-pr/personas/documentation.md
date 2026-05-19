@@ -1,5 +1,6 @@
 ---
 name: documentation
+version: 1.0.0
 kind: baseline
 applies: |
   The project's documentation rules (JSDoc / TSDoc style guide, if any, and the

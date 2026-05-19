@@ -2,8 +2,8 @@
 
 This file is the shared review base for the personal `ben-pr-review-*` slash commands. It is invoked indirectly via:
 
-- `/ben-pr-review-gh` — Local PR review (post as `COMMENT`); supports `--watch`
-- `/ben-pr-review-local` — pre-PR local review (terminal-only); supports `--fix`
+- `/ben-pr:review-gh` — Local PR review (post as `COMMENT`); supports `--watch`
+- `/ben-pr:review-local` — pre-PR local review (terminal-only); supports `--fix`
 
 Do NOT invoke this file directly. It assumes the caller has resolved branches and head SHA in its own Steps 1–2.
 
@@ -82,11 +82,12 @@ Use the Glob tool: `**/AGENTS.md` and `**/CLAUDE.md`. Filter to paths that prefi
 
 Compute boolean flags from the diff and from changed files' content. These flags drive which conditional personas launch in Step 5:
 
-- `<HAS_WEB3>` — true if any changed file imports a contract-interaction library (`viem`, `wagmi`, `ethers`, `web3.js`, project-specific web3 SDKs like `@morpho-org/*` / `@uniswap/*` / etc.), or contains contract address constants (`0x[a-fA-F0-9]{40}`), or contract interaction patterns (`useContractRead`, `useContractWrite`, `readContract`, `writeContract`, `simulateContract`, `signTypedData`, `permit*`).
+- `<HAS_WEB3>` — true if any changed file imports a contract-interaction library (`viem`, `wagmi`, `ethers`, `web3.js` — extend per project with any org-specific Web3 SDK imports, e.g. `@your-org/*`), or contains contract address constants (`0x[a-fA-F0-9]{40}`), or contract interaction patterns (`useContractRead`, `useContractWrite`, `readContract`, `writeContract`, `simulateContract`, `signTypedData`, `permit*`).
 - `<HAS_REACT>` — true if any changed file has extension `.jsx`/`.tsx`, OR imports `react`, `react-dom`, `next/*`, `@tanstack/react-*`, `@apollo/client`, OR contains `'use client'` / `'use server'` directives.
 - `<HAS_TAILWIND>` — true if `<HAS_REACT>` AND any changed file contains a Tailwind-shaped class string (regex match in JSX: `className="[^"]*\b(flex|grid|p-[0-9]|m-[0-9]|text-|bg-|border-|rounded-)`).
 - `<HAS_STYLING>` — true if any changed file imports `styled-components`, `@emotion/*`, `tss-react`, `*.module.css`, `*.module.scss`, OR contains a11y attributes (`role=`, `aria-`, `tabIndex`).
-- `<HAS_CI_RELEASE>` — true if any changed file matches `.github/workflows/**`, `.github/actions/**`, `.changeset/**`, `pnpm-lock.yaml`, `package-lock.json`, `yarn.lock`, `pnpm-workspace.yaml`, `.npmrc` (any level), OR any `package.json` whose `scripts.*publish*` / `scripts.*release*` field is modified, OR any file containing `changeset publish`, `npm publish`, `pnpm publish`, or `gh release create`.
+- `<HAS_CI_RELEASE>` — true if any changed file matches `.github/workflows/**`, `.github/actions/**`, `.changeset/**`, `pnpm-lock.yaml`, `package-lock.json`, `yarn.lock`, `pnpm-workspace.yaml`, `.npmrc` (any level), `turbo.json`, `vercel.json`, OR any `package.json` whose `scripts.*publish*` / `scripts.*release*` / `scripts.*deploy*` field is modified, OR any file containing `changeset publish`, `npm publish`, `pnpm publish`, `gh release create`, `vercel deploy`, or `vercel --prod`.
+- `<HAS_AI_SDK>` — true if any changed file imports `ai`, `@ai-sdk/*`, `@vercel/ai`, OR uses any of `streamText`, `generateText`, `streamObject`, `generateObject`, `embed`, `embedMany`, `useChat`, `useCompletion`, `useObject`, `ToolLoopAgent`, OR imports `ai-elements` or `streamdown`.
 
 ### Print discovery
 
@@ -105,15 +106,16 @@ Conditional flags:
   Tailwind:       <HAS_TAILWIND>
   Styling/a11y:   <HAS_STYLING>
   CI/release:     <HAS_CI_RELEASE>
+  AI SDK:         <HAS_AI_SDK>
 ```
 
 ## Step 5: Launch parallel review personas
 
-Persona specs live in `<HOME>/.agents/personas/*.md`. Each file has frontmatter declaring `kind: baseline` (always fires) or `kind: conditional` (fires only when its `trigger:` flag is true), plus the prompt body.
+Persona specs live in `${CLAUDE_PLUGIN_ROOT}/personas/*.md`. Each file has frontmatter declaring `kind: baseline` (always fires) or `kind: conditional` (fires only when its `trigger:` flag is true), plus the prompt body.
 
 ### Loop
 
-1. Read every file in `<HOME>/.agents/personas/*.md`.
+1. Read every file in `${CLAUDE_PLUGIN_ROOT}/personas/*.md`.
 2. For each persona, decide whether to launch:
    - `kind: baseline` → always launch.
    - `kind: conditional` → launch only when the flag named in `trigger:` is true (see Step 4 for flag computation). Compound triggers like `<HAS_TAILWIND> OR <HAS_STYLING>` are evaluated as written.
@@ -142,11 +144,12 @@ Baseline (always fire):
 Conditional (fire only when their trigger flag is true):
 
 - `web3-security.md` — fires when `<HAS_WEB3>` is true. Contract interactions, transaction params, permit flows, chainId validation.
-- `react-next-best-practices.md` — fires when `<HAS_REACT>` is true. Loads marketplace skills (`vercel-react-best-practices`, `vercel-composition-patterns`) as rubric.
-- `ui-styling-accessibility.md` — fires when `<HAS_TAILWIND>` OR `<HAS_STYLING>` is true. Loads `tailwind-design-system` marketplace skill as rubric when applicable.
-- `ci-release-security.md` — fires when `<HAS_CI_RELEASE>` is true. Workflow injection, action pinning, write-token hardening, lockfile drift, publish-flow integrity.
+- `react-next-best-practices.md` — fires when `<HAS_REACT>` is true. Loads marketplace rubrics: `vercel-react-best-practices`, `vercel-composition-patterns`, `next-best-practices`, `next-cache-components`, `building-components`, and `vercel-react-native-skills` (only when React Native is detected).
+- `ui-styling-accessibility.md` — fires when `<HAS_TAILWIND>` OR `<HAS_STYLING>` is true. Loads `tailwind-design-system`, `web-design-guidelines`, `ai-elements`, `streamdown`, `building-components` as rubric when applicable.
+- `ci-release-security.md` — fires when `<HAS_CI_RELEASE>` is true. Workflow injection, action pinning, write-token hardening, lockfile drift, publish-flow integrity. Loads `github-actions-docs`, `turborepo`, `deploy-to-vercel`, `vercel-cli-with-tokens` as rubric.
+- `ai-sdk-best-practices.md` — fires when `<HAS_AI_SDK>` is true. Vercel AI SDK usage, streaming, tool calls, structured output, useChat/useCompletion. Loads `ai-sdk`, `ai-elements`, `streamdown` as rubric.
 
-Adding a new persona = drop a new file under `<HOME>/.agents/personas/` with appropriate frontmatter. If conditional, also extend Step 4's flag detection. No edit to caller skill files needed.
+Adding a new persona = drop a new file under `${CLAUDE_PLUGIN_ROOT}/personas/` with appropriate frontmatter. If conditional, also extend Step 4's flag detection. No edit to caller skill files needed.
 
 ## Step 6: Aggregate and deduplicate findings
 
@@ -194,7 +197,7 @@ Severity labels (used everywhere downstream):
 
 ## Output contract (returned to caller)
 
-The caller (Step 7 of `/ben-pr-review-gh` / `/ben-pr-review-local`) consumes:
+The caller (Step 7 of `/ben-pr:review-gh` / `/ben-pr:review-local`) consumes:
 
 - `<FINDINGS>` — sorted, deduplicated array of `{severity, file, line, description}`.
 - `<FAILED_AGENTS>` — count + names of agents that returned `agent_error` or malformed output.

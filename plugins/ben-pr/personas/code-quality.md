@@ -1,5 +1,6 @@
 ---
 name: code-quality
+version: 1.0.0
 kind: baseline
 applies: |
   The project's spec for type discipline, forbidden patterns, and naming
