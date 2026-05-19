@@ -1,7 +1,7 @@
 ---
-name: fix
-version: 1.0.0
-description: Apply fixes for PR review findings and resolve merge conflicts. Reads unresolved review comments from a pull request, applies the fixes locally, detects and resolves merge conflicts with the base branch, commits, pushes, and resolves the threads. Use when user says /ben-pr:fix, "fix PR comments", "apply review fixes", "address PR feedback", or "fix conflicts". Takes a PR number as argument.
+name: pr-fix
+version: 2.0.0
+description: Apply fixes for PR review findings and resolve merge conflicts. Reads unresolved review comments from a pull request, applies the fixes locally, detects and resolves merge conflicts with the base branch, commits, pushes, and resolves the threads. Use when user says /local:pr-fix, "fix PR comments", "apply review fixes", "address PR feedback", or "fix conflicts". Takes a PR number as argument.
 ---
 
 # PR Fix — Apply Review Findings & Resolve Conflicts
@@ -11,15 +11,15 @@ Apply fixes for unresolved PR review comments, resolve merge conflicts with the 
 ## Usage
 
 ```
-/ben-pr:fix <pr-number>
-/ben-pr:fix <pr-number> --watch
+/local:pr-fix <pr-number>
+/local:pr-fix <pr-number> --watch
 ```
 
 ## Examples
 
 ```
-/ben-pr:fix 123
-/ben-pr:fix 456 --watch
+/local:pr-fix 123
+/local:pr-fix 456 --watch
 ```
 
 ## Arguments
@@ -81,7 +81,7 @@ git status --porcelain
 
 If there are uncommitted changes, warn the user and abort the skill entirely:
 ```
-Working tree is not clean. Please commit or stash your changes before running /ben-pr:fix.
+Working tree is not clean. Please commit or stash your changes before running /local:pr-fix.
 ```
 
 ### 2b: Fetch and checkout the PR branch
@@ -821,7 +821,7 @@ CYCLE END — the cron scheduler will run this again in 2 minutes.
 - **Conflict-aware**: Detects merge conflicts with the base branch before applying review fixes. Resolves conflicts intelligently by reading both sides and merging logically. Conflicts that can't be safely resolved are reported for human intervention.
 - **Quality gates**: Discovers and runs project linters/formatters after each file fix and broader quality checks (typecheck, lint) after all fixes. Ensures fixes don't introduce new issues.
 - **Self-contained watcher**: The cron watcher does actual work inline (resolves conflicts, applies fixes, replies to threads, resolves threads) rather than re-invoking the skill. This avoids recursive watcher creation and ensures each cron tick is a complete fix cycle. The watcher also performs relevance assessment on every cycle — it never blindly fixes.
-- **Pairs with `/ben-pr:review-gh`**: `/ben-pr:review-gh` posts findings (from parallel Claude agents + optional Codex), `/ben-pr:fix` applies fixes. With both using `--watch`, they form a fully autonomous review-fix loop.
+- **Pairs with `/local:pr-review-gh`**: `/local:pr-review-gh` posts findings (from parallel Claude agents + optional Codex), `/local:pr-fix` applies fixes. With both using `--watch`, they form a fully autonomous review-fix loop.
 - Fixes are applied to the PR branch, not main/dev
 - One commit for all fixes — keeps the PR history clean
 - Each reply includes the commit SHA for traceability

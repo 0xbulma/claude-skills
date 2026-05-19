@@ -1,9 +1,9 @@
-# ben-pr-review base — shared Steps 3–6
+# local-review base — shared Steps 3–6
 
-This file is the shared review base for the personal `ben-pr-review-*` slash commands. It is invoked indirectly via:
+This file is the shared review base for the personal `local-review-*` slash commands. It is invoked indirectly via:
 
-- `/ben-pr:review-gh` — Local PR review (post as `COMMENT`); supports `--watch`
-- `/ben-pr:review-local` — pre-PR local review (terminal-only); supports `--fix`
+- `/local:pr-review-gh` — Local PR review (post as `COMMENT`); supports `--watch`
+- `/local:pr-review-local` — pre-PR local review (terminal-only); supports `--fix`
 
 Do NOT invoke this file directly. It assumes the caller has resolved branches and head SHA in its own Steps 1–2.
 
@@ -197,7 +197,7 @@ Severity labels (used everywhere downstream):
 
 ## Output contract (returned to caller)
 
-The caller (Step 7 of `/ben-pr:review-gh` / `/ben-pr:review-local`) consumes:
+The caller (Step 7 of `/local:pr-review-gh` / `/local:pr-review-local`) consumes:
 
 - `<FINDINGS>` — sorted, deduplicated array of `{severity, file, line, description}`.
 - `<FAILED_AGENTS>` — count + names of agents that returned `agent_error` or malformed output.

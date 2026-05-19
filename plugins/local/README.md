@@ -1,0 +1,49 @@
+# local
+
+Seven slash-command skills for Claude Code.
+
+**PR review / fix** (delegates to the shared `lib/pr-review-base.md` + 10-persona library)
+
+- **`/local:pr-review-local`** — pre-PR review on the local branch (committed + uncommitted). Terminal-only output. `--fix` applies mechanical fixes.
+- **`/local:pr-review-gh <PR>`** — review an open GitHub PR; posts findings as a `COMMENT` review (never auto-approves). `--watch` re-reviews on every new commit.
+- **`/local:pr-fix <PR>`** — read unresolved review comments, classify, apply confidence-gated fixes, push, reply, resolve. `--watch` runs a cron-driven fix loop.
+
+**PR / workflow authoring** (repo-agnostic; no persona library)
+
+- **`/local:pr-create`** — open a draft PR from the current diff. Branch, title, body, and label derived without asking.
+- **`/local:extract-plan <doc> [project]`** — convert a TIB / ADR / RFC into a Linear project plan with milestones and dependency-aware issues.
+- **`/local:tib-create <title>`** — scaffold a new TIB markdown file from the template; pre-fills date, author, and CalVer ID.
+
+**Utility**
+
+- **`/local:setup`** — manually install the 18 rubric skills used by the conditional review personas. Same script also runs in the background on every Claude Code session start.
+
+The PR review/fix skills delegate Steps 3–6 to `lib/pr-review-base.md`, which loops over `personas/*.md` and dispatches one Agent per persona in parallel. Baseline personas always fire; conditional personas fire when their trigger flag matches the diff (Web3, React/Next, Tailwind/styling, CI/release).
+
+## Prerequisites
+
+- `gh` CLI authenticated (`gh auth status`) — for the GitHub skills.
+- `git` ≥ 2.30.
+
+Three Anthropic marketplace skills are *optional* — when installed, the React/Next and Tailwind conditional personas use them as rubric. When absent, the personas fall back to their built-in rubric:
+
+- `vercel-react-best-practices`
+- `vercel-composition-patterns`
+- `tailwind-design-system`
+
+## Install (as a marketplace plugin)
+
+```
+/plugin marketplace add 0xbulma/claude-skills
+/plugin install local@claude-skills
+```
+
+## Local development
+
+```bash
+claude --plugin-dir ./plugins/local
+```
+
+Inside Claude Code, `/reload-plugins` picks up edits without restart.
+
+See the repo-level `CLAUDE.md` for the full mental model.

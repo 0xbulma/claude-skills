@@ -1,0 +1,8 @@
+{
+  "name": "local",
+  "version": "2.0.0",
+  "description": "PR review, PR creation, and Linear/TIB authoring slash commands. Seven skills (pr-review-local, pr-review-gh, pr-fix, setup, pr-create, extract-plan, tib-create), a shared review base, and a 10-persona review library.",
+  "author": { "name": "0xbulma", "url": "https://github.com/0xbulma" },
+  "license": "MIT",
+  "homepage": "https://github.com/0xbulma/claude-skills"
+}

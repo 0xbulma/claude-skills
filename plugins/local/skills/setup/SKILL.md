@@ -1,11 +1,11 @@
 ---
 name: setup
 version: 1.0.0
-description: Install the optional rubric skills that the ben-pr conditional personas use as run-time guidance. Use when user says /ben-pr:setup, "install ben-pr prereqs", or sees a "Marketplace skill not found" warning from a review. Idempotent — safe to re-run.
+description: Install the optional rubric skills that the local conditional personas use as run-time guidance. Use when user says /local:setup, "install local prereqs", or sees a "Marketplace skill not found" warning from a review. Idempotent — safe to re-run.
 disable-model-invocation: true
 ---
 
-# /ben-pr:setup — Install Prereq Rubric Skills
+# /local:setup — Install Prereq Rubric Skills
 
 Installs the five rubric skills used by the conditional review personas. Skills already present are skipped. Failure on any one skill does not abort the others.
 

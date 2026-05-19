@@ -1,8 +1,0 @@
-{
-  "name": "ben-pr",
-  "version": "1.0.0",
-  "description": "PR review and PR fix slash commands. Includes three skills (review-local, review-gh, fix), a shared review base, and a 9-persona review library.",
-  "author": { "name": "Benjamin A", "email": "benjamin@morpho.xyz" },
-  "license": "MIT",
-  "homepage": "https://github.com/0xbulma/claude-skills"
-}

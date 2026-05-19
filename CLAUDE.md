@@ -4,20 +4,25 @@ Repo-level guidance for Claude Code working on this repo.
 
 ## What this repo is
 
-A Claude Code **plugin marketplace** containing a single plugin (`ben-pr`) with four slash-command skills (`review-local`, `review-gh`, `fix`, `setup`). The persona library and rubric prereqs are **optimized for TypeScript + React + Vercel** codebases — JSX/TSX detection, Server Components, React 19 APIs, Tailwind, Vercel's Web Interface Guidelines, and Web3 (viem/wagmi/ethers) when present. It works on any project, but the conditional personas are tuned for the TS/React/Vercel stack.
+A Claude Code **plugin marketplace** containing a single plugin (`local`) with seven slash-command skills:
 
-Users install via `/plugin marketplace add 0xbulma/claude-skills` → `/plugin install ben-pr@ben-claude-skills`. They invoke the skills as `/ben-pr:review-local`, `/ben-pr:review-gh`, `/ben-pr:fix`, `/ben-pr:setup`.
+- **PR review / fix** — `pr-review-local`, `pr-review-gh`, `pr-fix`, `setup`
+- **PR / workflow authoring** — `pr-create` (draft PR from the current diff), `extract-plan` (TIB/ADR → Linear project + milestones + issues), `tib-create` (scaffold a new TIB from template)
+
+The review side and its persona library are **optimized for TypeScript + React + Vercel** codebases — JSX/TSX detection, Server Components, React 19 APIs, Tailwind, Vercel's Web Interface Guidelines, and Web3 (viem/wagmi/ethers) when present. It works on any project, but the conditional personas are tuned for the TS/React/Vercel stack. The three authoring skills (`pr-create`, `extract-plan`, `tib-create`) are repo-agnostic.
+
+Users install via `/plugin marketplace add 0xbulma/claude-skills` → `/plugin install local@claude-skills`. They invoke the skills as `/local:pr-review-local`, `/local:pr-review-gh`, `/local:pr-fix`, `/local:setup`, `/local:pr-create`, `/local:extract-plan`, `/local:tib-create`.
 
 ## Mental model
 
 ```
 .claude-plugin/marketplace.json
         │
-        └─ lists ─→ plugins/ben-pr/
+        └─ lists ─→ plugins/local/
                           │
                           ├─ .claude-plugin/plugin.json
-                          ├─ skills/{review-local,review-gh,fix,setup}/SKILL.md
-                          ├─ lib/ben-pr-review-base.md   ← shared Steps 3–6
+                          ├─ skills/{pr-review-local,pr-review-gh,pr-fix,setup,pr-create,extract-plan,tib-create}/SKILL.md
+                          ├─ lib/pr-review-base.md   ← shared Steps 3–6
                           ├─ personas/*.md               ← 10 versioned reviewers
                           ├─ hooks/hooks.json            ← SessionStart auto-install
                           └─ bin/install-prereqs.sh      ← idempotent prereq install
@@ -53,14 +58,14 @@ One-way arrow: skills delegate Steps 3–6 to `lib/`, which loops over `personas
 Installation mechanism (in order of automation):
 
 1. **SessionStart hook** (`hooks/hooks.json`) — runs `bin/install-prereqs.sh` silently in the background every Claude Code session. Idempotent: skills already present at `~/.claude/skills/<name>/SKILL.md` are skipped. Failure on any one skill does not block the session.
-2. **Manual fallback** — `/ben-pr:setup` runs the same script with verbose output. Use this when the hook failed (no network at startup) or to verify install state.
+2. **Manual fallback** — `/local:setup` runs the same script with verbose output. Use this when the hook failed (no network at startup) or to verify install state.
 
 If a prereq is absent at review time, the consuming persona logs `Marketplace skill not found: <name> — degrading to persona's built-in rubric below` and falls through to the inline rubric in its body. No hard failure.
 
 ## Local development loop
 
 ```bash
-claude --plugin-dir ./plugins/ben-pr
+claude --plugin-dir ./plugins/local
 # inside Claude Code:
 /reload-plugins   # after edits
 ```
@@ -80,7 +85,7 @@ The SessionStart hook fires on each `claude` invocation, so prereqs install the 
 
 Three levels of versioning, all semver:
 
-1. **Plugin version** — `plugins/ben-pr/.claude-plugin/plugin.json` `version`. The release pin users see in `/plugin marketplace update`. Bump on every release.
+1. **Plugin version** — `plugins/local/.claude-plugin/plugin.json` `version`. The release pin users see in `/plugin marketplace update`. Bump on every release.
 2. **Per-skill version** — `version:` in each `SKILL.md` frontmatter. Lets you ship a skill-level changelog without bumping the whole plugin.
 3. **Per-persona version** — `version:` in each `personas/*.md` frontmatter. Personas evolve fast; per-file versioning lets us track rubric drift independently.
 
@@ -92,7 +97,7 @@ Semver rules:
 
 ## Persona contract
 
-Every file in `plugins/ben-pr/personas/` has YAML frontmatter:
+Every file in `plugins/local/personas/` has YAML frontmatter:
 
 ```yaml
 ---
@@ -110,11 +115,11 @@ severity-guidance: |
 ---
 ```
 
-Adding a persona = drop a new file in `plugins/ben-pr/personas/`. If `kind: conditional`, also extend the flag-detection block in Step 4 of `plugins/ben-pr/lib/ben-pr-review-base.md`. No `plugin.json` edit needed.
+Adding a persona = drop a new file in `plugins/local/personas/`. If `kind: conditional`, also extend the flag-detection block in Step 4 of `plugins/local/lib/pr-review-base.md`. No `plugin.json` edit needed.
 
 ## Forking notes
 
-- **Per-org Web3 SDK**: extend the `<HAS_WEB3>` detector in `lib/ben-pr-review-base.md` Step 4 and `skills/fix/SKILL.md` Steps 4.5/5d.1/12 to include `@your-org/*`.
+- **Per-org Web3 SDK**: extend the `<HAS_WEB3>` detector in `lib/pr-review-base.md` Step 4 and `skills/pr-fix/SKILL.md` Steps 4.5/5d.1/12 to include `@your-org/*`.
 - **Different prereq set**: edit the `PREREQS` heredoc in `bin/install-prereqs.sh`. Each line is `<install-target-name> <owner/repo@skill>`. The persona Bash `find` will discover whatever lands in `~/.claude/skills/<name>/`.
 
 ## Testing

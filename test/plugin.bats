@@ -10,10 +10,11 @@ setup() {
   # Resolve repo root from this test file's location.
   REPO_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)"
   MARKETPLACE="$REPO_ROOT/.claude-plugin/marketplace.json"
-  PLUGIN_DIR="$REPO_ROOT/plugins/ben-pr"
+  PLUGIN_DIR="$REPO_ROOT/plugins/local"
   PLUGIN_MANIFEST="$PLUGIN_DIR/.claude-plugin/plugin.json"
   SKILLS_DIR="$PLUGIN_DIR/skills"
   PERSONAS_DIR="$PLUGIN_DIR/personas"
+  SKILLS_ALL="pr-fix pr-review-gh pr-review-local setup pr-create extract-plan tib-create"
 }
 
 @test "marketplace.json is valid JSON" {
@@ -36,15 +37,14 @@ setup() {
   [ "$status" -eq 0 ]
 }
 
-@test "four skills exist at expected paths" {
-  [ -f "$SKILLS_DIR/fix/SKILL.md" ]
-  [ -f "$SKILLS_DIR/review-gh/SKILL.md" ]
-  [ -f "$SKILLS_DIR/review-local/SKILL.md" ]
-  [ -f "$SKILLS_DIR/setup/SKILL.md" ]
+@test "seven skills exist at expected paths" {
+  for skill in $SKILLS_ALL; do
+    [ -f "$SKILLS_DIR/$skill/SKILL.md" ] || { echo "missing $SKILLS_DIR/$skill/SKILL.md" >&2; return 1; }
+  done
 }
 
 @test "each SKILL.md has name matching its directory" {
-  for skill in fix review-gh review-local setup; do
+  for skill in $SKILLS_ALL; do
     skill_file="$SKILLS_DIR/$skill/SKILL.md"
     name=$(awk '/^---$/{f=!f; next} f && /^name:/{print $2; exit}' "$skill_file")
     [ "$name" = "$skill" ] || { echo "skill=$skill got name=$name" >&2; return 1; }
@@ -52,7 +52,7 @@ setup() {
 }
 
 @test "each SKILL.md has a non-empty description" {
-  for skill in fix review-gh review-local setup; do
+  for skill in $SKILLS_ALL; do
     skill_file="$SKILLS_DIR/$skill/SKILL.md"
     desc=$(awk '/^---$/{f=!f; next} f && /^description:/{sub(/^description: */,""); print; exit}' "$skill_file")
     [ -n "$desc" ] || { echo "skill=$skill has empty description" >&2; return 1; }
@@ -60,7 +60,7 @@ setup() {
 }
 
 @test "each SKILL.md has a semver version" {
-  for skill in fix review-gh review-local setup; do
+  for skill in $SKILLS_ALL; do
     skill_file="$SKILLS_DIR/$skill/SKILL.md"
     version=$(awk '/^---$/{f=!f; next} f && /^version:/{print $2; exit}' "$skill_file")
     [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]] || { echo "skill=$skill version=$version is not semver" >&2; return 1; }
@@ -77,6 +77,19 @@ setup() {
 @test "no leaked @morpho-org references in plugins/" {
   run grep -rn '@morpho-org' "$PLUGIN_DIR"
   # grep returns 1 when no match — that's what we want.
+  [ "$status" -ne 0 ]
+}
+
+@test "no leaked 'morpho' references anywhere in plugins/" {
+  # Skills imported from morpho-org/sdks must be fully repo-agnostic.
+  # No exceptions — including author/owner metadata.
+  run grep -rni --exclude-dir=node_modules 'morpho' "$PLUGIN_DIR"
+  [ "$status" -ne 0 ]
+}
+
+@test "no leaked personal-name references in plugins/" {
+  # Only the public 0xbulma handle is permitted.
+  run grep -rn 'Benjamin A\|benjamin@' "$PLUGIN_DIR"
   [ "$status" -ne 0 ]
 }
 
@@ -98,9 +111,9 @@ setup() {
   run grep -rn '~/\.claude/skills/' \
     "$PLUGIN_DIR/personas" \
     "$PLUGIN_DIR/lib" \
-    "$PLUGIN_DIR/skills/fix" \
-    "$PLUGIN_DIR/skills/review-gh" \
-    "$PLUGIN_DIR/skills/review-local"
+    "$PLUGIN_DIR/skills/pr-fix" \
+    "$PLUGIN_DIR/skills/pr-review-gh" \
+    "$PLUGIN_DIR/skills/pr-review-local"
   [ "$status" -ne 0 ]
 }
 
@@ -124,11 +137,14 @@ setup() {
   command -v claude >/dev/null 2>&1 || skip "claude CLI not on PATH"
 
   # Non-interactive smoke: load the plugin and ask Claude to list skills.
-  # The 3 main skills are model-invokable; `setup` is intentionally
+  # The 6 model-invokable skills should appear; `setup` is intentionally
   # disable-model-invocation: true and may not appear in the listing.
   run claude --plugin-dir "$PLUGIN_DIR" -p "List the plugin slash commands you can see. Just print their names." 2>&1
   [ "$status" -eq 0 ]
-  echo "$output" | grep -q "ben-pr:fix"
-  echo "$output" | grep -q "ben-pr:review-gh"
-  echo "$output" | grep -q "ben-pr:review-local"
+  echo "$output" | grep -q "local:pr-fix"
+  echo "$output" | grep -q "local:pr-review-gh"
+  echo "$output" | grep -q "local:pr-review-local"
+  echo "$output" | grep -q "local:pr-create"
+  echo "$output" | grep -q "local:extract-plan"
+  echo "$output" | grep -q "local:tib-create"
 }

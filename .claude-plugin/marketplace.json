@@ -1,14 +1,14 @@
 {
-  "name": "ben-claude-skills",
-  "owner": { "name": "Benjamin A" },
+  "name": "claude-skills",
+  "owner": { "name": "0xbulma" },
   "description": "PR review and PR fix slash commands for Claude Code.",
   "plugins": [
     {
-      "name": "ben-pr",
-      "source": "./plugins/ben-pr",
-      "description": "Four skills: pre-PR local review, GitHub PR review, PR-fix automation, and rubric setup. Shares a persona library + SessionStart hook that auto-installs 18 Vercel/community rubric skills.",
+      "name": "local",
+      "source": "./plugins/local",
+      "description": "Seven skills: pre-PR local review, GitHub PR review, PR-fix automation, draft PR creation, doc-to-Linear plan extraction, TIB scaffolding, and rubric setup. Shares a persona library + SessionStart hook that auto-installs 18 Vercel/community rubric skills.",
       "category": "code-review",
-      "keywords": ["pr-review", "code-review", "github", "personas", "vercel", "react", "typescript"]
+      "keywords": ["pr-review", "code-review", "github", "personas", "vercel", "react", "typescript", "linear", "adr", "rfc", "tib"]
     }
   ]
 }

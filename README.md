@@ -1,6 +1,6 @@
 # claude-skills
 
-A Claude Code [plugin marketplace](https://code.claude.com/docs/en/plugin-marketplaces) for **TypeScript + React + Vercel**-optimized PR review and PR fix workflows. Ships one plugin (`ben-pr`) with four slash-command skills, a 10-persona review library, and a SessionStart hook that auto-installs 18 rubric skills (15 [Vercel-published](https://vercel.com/docs/agent-resources/skills) + 3 community) from the [skills.sh](https://skills.sh) registry.
+A Claude Code [plugin marketplace](https://code.claude.com/docs/en/plugin-marketplaces) for **TypeScript + React + Vercel**-optimized PR review, PR fix, and decision-record / Linear workflows. Ships one plugin (`local`) with seven slash-command skills, a 10-persona review library, and a SessionStart hook that auto-installs 18 rubric skills (15 [Vercel-published](https://vercel.com/docs/agent-resources/skills) + 3 community) from the [skills.sh](https://skills.sh) registry.
 
 Works on any project — but the conditional personas are tuned for TS/JS/JSX/TSX codebases, with Vercel's `vercel-react-best-practices` / `web-design-guidelines` / `vercel-composition-patterns`, Tailwind, and Web3 (viem/wagmi/ethers) as runtime rubric.
 
@@ -10,14 +10,17 @@ Works on any project — but the conditional personas are tuned for TS/JS/JSX/TS
 .
 ├── .claude-plugin/
 │   └── marketplace.json
-├── plugins/ben-pr/
+├── plugins/local/
 │   ├── .claude-plugin/plugin.json
 │   ├── skills/
-│   │   ├── review-local/SKILL.md     # /ben-pr:review-local
-│   │   ├── review-gh/SKILL.md        # /ben-pr:review-gh <PR>
-│   │   ├── fix/SKILL.md              # /ben-pr:fix <PR>
-│   │   └── setup/SKILL.md            # /ben-pr:setup
-│   ├── lib/ben-pr-review-base.md     # shared review base
+│   │   ├── pr-review-local/SKILL.md  # /local:pr-review-local
+│   │   ├── pr-review-gh/SKILL.md     # /local:pr-review-gh <PR>
+│   │   ├── pr-fix/SKILL.md           # /local:pr-fix <PR>
+│   │   ├── pr-create/SKILL.md        # /local:pr-create
+│   │   ├── extract-plan/SKILL.md     # /local:extract-plan <doc> [project]
+│   │   ├── tib-create/SKILL.md       # /local:tib-create <title>
+│   │   └── setup/SKILL.md            # /local:setup
+│   ├── lib/pr-review-base.md         # shared review base
 │   ├── personas/*.md                 # 10 reviewers (5 baseline + 5 conditional)
 │   ├── hooks/hooks.json              # SessionStart auto-install
 │   ├── bin/install-prereqs.sh        # idempotent prereq installer
@@ -28,10 +31,21 @@ Works on any project — but the conditional personas are tuned for TS/JS/JSX/TS
 
 ## Skills
 
-- **`/ben-pr:review-local`** — pre-PR review on the working tree (committed + uncommitted). Terminal output. `--fix` applies mechanical fixes.
-- **`/ben-pr:review-gh <PR>`** — review an open GitHub PR via GraphQL. Posts findings as a `COMMENT` review (never auto-approves). `--watch` re-runs on every new commit.
-- **`/ben-pr:fix <PR>`** — read unresolved review comments, classify, apply confidence-gated fixes, push, reply, resolve. `--watch` runs a 2-minute cron fix loop.
-- **`/ben-pr:setup`** — manually install the rubric prereqs (also runs in the background on every session start).
+**PR review / fix**
+
+- **`/local:pr-review-local`** — pre-PR review on the working tree (committed + uncommitted). Terminal output. `--fix` applies mechanical fixes.
+- **`/local:pr-review-gh <PR>`** — review an open GitHub PR via GraphQL. Posts findings as a `COMMENT` review (never auto-approves). `--watch` re-runs on every new commit.
+- **`/local:pr-fix <PR>`** — read unresolved review comments, classify, apply confidence-gated fixes, push, reply, resolve. `--watch` runs a 2-minute cron fix loop.
+
+**PR / workflow authoring**
+
+- **`/local:pr-create`** — open a draft PR from the current diff. Derives branch name, title, body, and label without asking.
+- **`/local:extract-plan <doc> [project]`** — convert a TIB / ADR / RFC into a Linear project plan (milestones + issues with dependencies).
+- **`/local:tib-create <title>`** — scaffold a new TIB markdown file from the template; pre-fills date, author, and CalVer ID.
+
+**Utility**
+
+- **`/local:setup`** — manually install the rubric prereqs (also runs in the background on every session start).
 
 ## Rubric prereqs (auto-installed)
 
@@ -58,11 +72,11 @@ Works on any project — but the conditional personas are tuned for TS/JS/JSX/TS
 | `find-skills` | `vercel-labs/skills` | Skill discovery | utility |
 | `before-and-after` | `vercel-labs/before-and-after` | Visual before/after diff | utility |
 
-If any are missing at review time, the consuming persona logs a degradation warning and falls back to its inline rubric — no hard failure. Manual install: run `/ben-pr:setup` from Claude Code, or invoke `bin/install-prereqs.sh` directly.
+If any are missing at review time, the consuming persona logs a degradation warning and falls back to its inline rubric — no hard failure. Manual install: run `/local:setup` from Claude Code, or invoke `bin/install-prereqs.sh` directly.
 
 ### Why not plugin `dependencies`?
 
-Claude Code's `plugin.json` `dependencies` field only resolves other **plugins** (in the marketplace ecosystem). The 18 rubric skills above live in the parallel [skills.sh](https://skills.sh) / `npx skills` ecosystem, so we install them via SessionStart hook + a verbose `/ben-pr:setup` skill instead.
+Claude Code's `plugin.json` `dependencies` field only resolves other **plugins** (in the marketplace ecosystem). The 18 rubric skills above live in the parallel [skills.sh](https://skills.sh) / `npx skills` ecosystem, so we install them via SessionStart hook + a verbose `/local:setup` skill instead.
 
 ## Other prerequisites
 
@@ -79,7 +93,7 @@ From inside Claude Code:
 /plugin marketplace add 0xbulma/claude-skills
 
 # 2. Install the plugin (one-time)
-/plugin install ben-pr@ben-claude-skills
+/plugin install local@claude-skills
 
 # 3. Reload so the SessionStart hook fires
 /reload-plugins
@@ -90,7 +104,7 @@ From inside Claude Code:
 #    ~30-90s. Subsequent sessions are instant (idempotent skip).
 
 # 4. Optional — verify install state, see one ✓ per skill
-/ben-pr:setup
+/local:setup
 ```
 
 Make sure `npx` (Node.js), `gh` (authenticated), and `git` ≥ 2.30 are on `PATH` before step 1 — see [Prerequisites](#other-prerequisites) below.
@@ -100,7 +114,7 @@ Make sure `npx` (Node.js), `gh` (authenticated), and `git` ≥ 2.30 are on `PATH
 Test the plugin straight from a clone, no marketplace round-trip:
 
 ```bash
-claude --plugin-dir ./plugins/ben-pr
+claude --plugin-dir ./plugins/local
 ```
 
 The SessionStart hook fires the same way; the 18 rubric skills auto-install on session start.
@@ -108,14 +122,14 @@ The SessionStart hook fires the same way; the 18 rubric skills auto-install on s
 ## Update
 
 ```
-/plugin marketplace update ben-claude-skills
+/plugin marketplace update claude-skills
 ```
 
-The plugin's `version` field in `plugins/ben-pr/.claude-plugin/plugin.json` controls when users see a new release. Each `SKILL.md` and persona also has its own `version:` field for per-file change tracking.
+The plugin's `version` field in `plugins/local/.claude-plugin/plugin.json` controls when users see a new release. Each `SKILL.md` and persona also has its own `version:` field for per-file change tracking.
 
 ## Local development
 
-After editing any file under `plugins/ben-pr/`, run `/reload-plugins` inside Claude Code to pick up changes — no restart needed. Run `bats test/plugin.bats` to validate manifest, frontmatter, version fields, and hook wiring (17 cases).
+After editing any file under `plugins/local/`, run `/reload-plugins` inside Claude Code to pick up changes — no restart needed. Run `bats test/plugin.bats` to validate manifest, frontmatter, version fields, and hook wiring (19 cases).
 
 See [CLAUDE.md](./CLAUDE.md) for the full mental model, persona contract, versioning rules, and forking notes.
 

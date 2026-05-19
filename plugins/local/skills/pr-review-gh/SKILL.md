@@ -1,24 +1,24 @@
 ---
-name: review-gh
-version: 1.0.0
-description: Local PR review bot. Reviews an open pull request with parallel specialized agents (5 baseline + conditional Web3, React/Next, UI/styling) and posts findings as inline GitHub review comments using event=COMMENT (never auto-approves). Optionally watches for new commits and re-reviews. Use when user says /ben-pr:review-gh, "review PR", "watch PR", or "babysit PR". Takes a PR number as argument.
+name: pr-review-gh
+version: 2.0.0
+description: Local PR review bot. Reviews an open pull request with parallel specialized agents (5 baseline + conditional Web3, React/Next, UI/styling) and posts findings as inline GitHub review comments using event=COMMENT (never auto-approves). Optionally watches for new commits and re-reviews. Use when user says /local:pr-review-gh, "review PR", "watch PR", or "babysit PR". Takes a PR number as argument.
 ---
 
 # review-gh — Local PR Review (post to GitHub)
 
-Reviews a GitHub Pull Request locally using parallel specialized agents from `${CLAUDE_PLUGIN_ROOT}/lib/ben-pr-review-base.md`, posts findings as inline review comments with `event="COMMENT"`. Never auto-approves or requests changes — leaves the verdict to humans. Optionally schedules a 2-minute watcher cron via `--watch`.
+Reviews a GitHub Pull Request locally using parallel specialized agents from `${CLAUDE_PLUGIN_ROOT}/lib/pr-review-base.md`, posts findings as inline review comments with `event="COMMENT"`. Never auto-approves or requests changes — leaves the verdict to humans. Optionally schedules a 2-minute watcher cron via `--watch`.
 
 ## Usage
 
 ```
-/ben-pr:review-gh <PR_NUMBER>
-/ben-pr:review-gh <PR_NUMBER> --watch
+/local:pr-review-gh <PR_NUMBER>
+/local:pr-review-gh <PR_NUMBER> --watch
 ```
 
 ## Pre-conditions
 
 - A `<PR_NUMBER>` is required.
-- The skill is local-only by design. If `CI=true` or `GITHUB_ACTIONS=true` is detected, print one warning line — `WARNING: ben-pr:review-gh runs locally; this skill family does not ship a CI variant. Use the repo-level pr-review-ci instead if you need CI verdicts.` — and continue. Do not refuse.
+- The skill is local-only by design. If `CI=true` or `GITHUB_ACTIONS=true` is detected, print one warning line — `WARNING: local:pr-review-gh runs locally; this skill family does not ship a CI variant. Use the repo-level pr-review-ci instead if you need CI verdicts.` — and continue. Do not refuse.
 - If `--watch` is passed, the skill is NOT complete until Step 9's CronCreate succeeds and the job ID is reported.
 
 ## Placeholder convention
@@ -39,11 +39,11 @@ Reviews a GitHub Pull Request locally using parallel specialized agents from `${
 
 ```bash
 if [ -z "${1:-}" ]; then
-  echo "ben-pr:review-gh requires a PR number." >&2
+  echo "local:pr-review-gh requires a PR number." >&2
   exit 1
 fi
 if [ "$CI" = "true" ] || [ "$GITHUB_ACTIONS" = "true" ]; then
-  echo "WARNING: ben-pr:review-gh runs locally; this skill family does not ship a CI variant. Use the repo-level pr-review-ci instead if you need CI verdicts." >&2
+  echo "WARNING: local:pr-review-gh runs locally; this skill family does not ship a CI variant. Use the repo-level pr-review-ci instead if you need CI verdicts." >&2
 fi
 ```
 
@@ -65,7 +65,7 @@ Extract `<BASE_BRANCH>`, `<HEAD_BRANCH>`, `<HEAD_SHA>`, `state`. Validate that a
 
 ## Steps 3–6: Shared review base
 
-**Read `${CLAUDE_PLUGIN_ROOT}/lib/ben-pr-review-base.md` and follow Steps 3–6 there**, with these inputs:
+**Read `${CLAUDE_PLUGIN_ROOT}/lib/pr-review-base.md` and follow Steps 3–6 there**, with these inputs:
 
 - `<DIFF_SOURCE>` = `pr`
 - `<HEAD_REF>` = `origin/<HEAD_BRANCH>`
@@ -74,7 +74,7 @@ The base produces: `<FINDINGS>`, `<FAILED_AGENTS>`, `<COUNTS>`, `<TOTAL_AGENTS_L
 
 ## Step 7: Post the review as `COMMENT`
 
-Build a JSON object at `/tmp/ben-pr:review-gh-<PR_NUMBER>-comments.json`:
+Build a JSON object at `/tmp/local:pr-review-gh-<PR_NUMBER>-comments.json`:
 
 ```json
 {
@@ -97,7 +97,7 @@ Always use `"event": "COMMENT"` — never auto-approve or request changes.
 ### Body format
 
 ```
-## Parallel PR Review (Claude — ben-pr:review-gh)
+## Parallel PR Review (Claude — local:pr-review-gh)
 
 **Reviewed commit:** `<HEAD_SHA_SHORT>`
 
@@ -189,7 +189,7 @@ CYCLE START:
 2. GET LAST REVIEWED SHA. Use --arg login binding:
    set CYCLE_LAST_REVIEWED_RAW = `gh api repos/<OWNER>/<REPO>/pulls/<PR_NUMBER>/reviews?per_page=100`
    If gh exit code != 0: abort cycle with WATCH_TRANSIENT_ERROR (do NOT fall through to "review everything").
-   set CYCLE_LAST_REVIEWED_SHA = `printf '%s' "${CYCLE_LAST_REVIEWED_RAW}" | jq --arg login "<BOT_LOGIN>" -r '[.[] | select(.user.login == $login or ((.body // "") | test("Parallel PR Review|Code Review Summary|ben-pr:review-gh|ben-pr-review-gh")))] | sort_by(.submitted_at) | last | .commit_id // ""'`
+   set CYCLE_LAST_REVIEWED_SHA = `printf '%s' "${CYCLE_LAST_REVIEWED_RAW}" | jq --arg login "<BOT_LOGIN>" -r '[.[] | select(.user.login == $login or ((.body // "") | test("Parallel PR Review|Code Review Summary|local:pr-review-gh|pr-review-gh")))] | sort_by(.submitted_at) | last | .commit_id // ""'`
    If gh exit was zero AND ${CYCLE_LAST_REVIEWED_SHA} is empty: proceed with empty value (review everything on first sighting).
 
 3. COMPARE SHA:
@@ -198,7 +198,7 @@ CYCLE START:
 4. NEW COMMIT DETECTED:
    Say "New commit detected on PR #<PR_NUMBER>: ${CYCLE_HEAD_SHA}. Running full review..."
 
-5. **Read `${CLAUDE_PLUGIN_ROOT}/lib/ben-pr-review-base.md` and follow Steps 3–6 there**, with:
+5. **Read `${CLAUDE_PLUGIN_ROOT}/lib/pr-review-base.md` and follow Steps 3–6 there**, with:
    - <DIFF_SOURCE> = pr
    - <HEAD_REF> = origin/<HEAD_BRANCH>
    - <BASE_BRANCH> = <BASE_BRANCH>
@@ -207,10 +207,10 @@ CYCLE START:
    The base produces: <FINDINGS>, ${CYCLE_FAILED_AGENTS}, <COUNTS>, <TOTAL_AGENTS_LAUNCHED>.
 
 6. POST REVIEW to GitHub as a single atomic call:
-   Build a JSON file at /tmp/ben-pr:review-gh-<PR_NUMBER>-cycle.json with commit_id=${CYCLE_HEAD_SHA} (NOT a CronCreate-time SHA), event="COMMENT", body (summary table), and comments[] array.
+   Build a JSON file at /tmp/local:pr-review-gh-<PR_NUMBER>-cycle.json with commit_id=${CYCLE_HEAD_SHA} (NOT a CronCreate-time SHA), event="COMMENT", body (summary table), and comments[] array.
    If ${CYCLE_FAILED_AGENTS} > 0, prepend "> WARNING: ${CYCLE_FAILED_AGENTS} of <TOTAL_AGENTS_LAUNCHED> agents failed (<names>) — review may be incomplete." to the body.
-   Run: gh api repos/<OWNER>/<REPO>/pulls/<PR_NUMBER>/reviews --method POST --input /tmp/ben-pr:review-gh-<PR_NUMBER>-cycle.json — abort cycle if non-zero exit.
-   Clean up: rm -f /tmp/ben-pr:review-gh-<PR_NUMBER>-cycle.json
+   Run: gh api repos/<OWNER>/<REPO>/pulls/<PR_NUMBER>/reviews --method POST --input /tmp/local:pr-review-gh-<PR_NUMBER>-cycle.json — abort cycle if non-zero exit.
+   Clean up: rm -f /tmp/local:pr-review-gh-<PR_NUMBER>-cycle.json
 
 7. Say "Sentinel: WATCH_REVIEW_DONE — PR #<PR_NUMBER> commit ${CYCLE_HEAD_SHA_SHORT}: <N> findings (X critical, Y high, Z medium, W low)."
 
@@ -234,7 +234,7 @@ After CronCreate returns the job ID:
 
 - **`COMMENT` event only** — never auto-approve or request changes. The user reviews findings and decides.
 - **`--watch` semantics**: 2-minute cron, self-contained per cycle (no CronCreate-time SHA leakage); watcher cycles re-discover project context AND conditional flags per cycle so newly-added React/Web3/Tailwind code triggers the right agents on subsequent runs.
-- **Pairs with `/ben-pr:fix`**: this skill posts findings; `/ben-pr:fix` applies them. With both using `--watch`, they form a fully autonomous review-fix loop.
+- **Pairs with `/local:pr-fix`**: this skill posts findings; `/local:pr-fix` applies them. With both using `--watch`, they form a fully autonomous review-fix loop.
 
 ## Sentinel grammar
 

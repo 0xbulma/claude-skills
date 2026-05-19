@@ -1,27 +1,27 @@
 ---
-name: review-local
-version: 1.0.0
-description: Pre-PR local code review. Reviews local branch changes (committed + uncommitted) using parallel specialized agents (5 baseline + conditional Web3, React/Next, UI/styling) and outputs findings in the terminal. Optionally applies fixes with --fix (refuses on dirty tree). Use when user says /ben-pr:review-local, "review my changes", "review before PR", "local review", or "deep review".
+name: pr-review-local
+version: 2.0.0
+description: Pre-PR local code review. Reviews local branch changes (committed + uncommitted) using parallel specialized agents (5 baseline + conditional Web3, React/Next, UI/styling) and outputs findings in the terminal. Optionally applies fixes with --fix (refuses on dirty tree). Use when user says /local:pr-review-local, "review my changes", "review before PR", "local review", or "deep review".
 ---
 
 # review-local — Pre-PR Local Review
 
-Reviews local branch changes using parallel specialized agents from `${CLAUDE_PLUGIN_ROOT}/lib/ben-pr-review-base.md` and outputs findings directly in the terminal. Zero GitHub interaction. Optionally applies fixes with `--fix`.
+Reviews local branch changes using parallel specialized agents from `${CLAUDE_PLUGIN_ROOT}/lib/pr-review-base.md` and outputs findings directly in the terminal. Zero GitHub interaction. Optionally applies fixes with `--fix`.
 
 ## Usage
 
 ```
-/ben-pr:review-local                       # review current branch vs default base
-/ben-pr:review-local <BASE_BRANCH>         # review against an explicit base branch
-/ben-pr:review-local --fix                 # review and apply fixes (refuses on dirty tree)
-/ben-pr:review-local <BASE_BRANCH> --fix   # both
+/local:pr-review-local                       # review current branch vs default base
+/local:pr-review-local <BASE_BRANCH>         # review against an explicit base branch
+/local:pr-review-local --fix                 # review and apply fixes (refuses on dirty tree)
+/local:pr-review-local <BASE_BRANCH> --fix   # both
 ```
 
 `<BASE_BRANCH>` is positional and must NOT begin with `--`. Flag order is otherwise free.
 
 ## Pre-conditions
 
-- The skill is local-only by design. If `CI=true` or `GITHUB_ACTIONS=true` is detected, print one warning line — `WARNING: ben-pr:review-local is for pre-PR local review; this skill family does not ship a CI variant.` — and continue. Do not refuse.
+- The skill is local-only by design. If `CI=true` or `GITHUB_ACTIONS=true` is detected, print one warning line — `WARNING: local:pr-review-local is for pre-PR local review; this skill family does not ship a CI variant.` — and continue. Do not refuse.
 
 ## Validating end-to-end
 
@@ -42,7 +42,7 @@ Idempotency: re-running with no diff change produces the same sentinel + same co
 
 ```bash
 if [ "$CI" = "true" ] || [ "$GITHUB_ACTIONS" = "true" ]; then
-  echo "WARNING: ben-pr:review-local is for pre-PR local review; this skill family does not ship a CI variant." >&2
+  echo "WARNING: local:pr-review-local is for pre-PR local review; this skill family does not ship a CI variant." >&2
 fi
 ```
 
@@ -79,7 +79,7 @@ if [ -z "$BASE_BRANCH" ]; then
   done
 fi
 if [ -z "$BASE_BRANCH" ]; then
-  echo "Could not resolve base branch. Pass one explicitly: /ben-pr:review-local <BASE_BRANCH>" >&2
+  echo "Could not resolve base branch. Pass one explicitly: /local:pr-review-local <BASE_BRANCH>" >&2
   exit 1
 fi
 ```
@@ -98,7 +98,7 @@ fi
 
 ## Steps 3–6: Shared review base
 
-**Read `${CLAUDE_PLUGIN_ROOT}/lib/ben-pr-review-base.md` and follow Steps 3–6 there**, with:
+**Read `${CLAUDE_PLUGIN_ROOT}/lib/pr-review-base.md` and follow Steps 3–6 there**, with:
 
 - `<DIFF_SOURCE>` = `local` (include uncommitted diff)
 - `<HEAD_REF>` = `HEAD`
@@ -110,7 +110,7 @@ The base produces: `<FINDINGS>`, `<FAILED_AGENTS>`, `<COUNTS>`, `<TOTAL_AGENTS_L
 Format directly in the conversation:
 
 ```
-## Local-only Code Review (ben-pr:review-local)
+## Local-only Code Review (local:pr-review-local)
 
 **Branch:** <HEAD_BRANCH> -> <BASE_BRANCH>  |  **Files:** <count>  |  **Range:** <MERGE_BASE_SHORT>..<HEAD_SHA_SHORT>
 **Uncommitted files included:** <U>  |  **Mode:** Local-only
@@ -211,7 +211,7 @@ Sentinel: FIX_DONE_LOCAL — <X> applied, <Y> skipped (Local-only, unstaged).
 
 - **No GitHub interaction**. The skill never calls `gh api`. All output stays in the terminal.
 - **Refuse on dirty tree** for `--fix`. Clean precondition replaces ~80 lines of stash plumbing and a class of stash-pop-conflict bugs.
-- **Pairs with `/ben-pr:review-gh`**: workflow is `/ben-pr:review-local` (pre-PR feedback) → fix issues → create PR → `/ben-pr:review-gh` (GitHub-posted review).
+- **Pairs with `/local:pr-review-gh`**: workflow is `/local:pr-review-local` (pre-PR feedback) → fix issues → create PR → `/local:pr-review-gh` (GitHub-posted review).
 
 ## Sentinel grammar
 

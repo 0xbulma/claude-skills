@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 #
 # install-prereqs.sh — idempotently install the 5 prereq skills used by the
-# ben-pr conditional personas.
+# local conditional personas.
 #
 # Safe to run repeatedly. Each skill is only fetched if not already present
 # at ~/.claude/skills/<name>/SKILL.md.
 #
 # Invoked by:
 #   - SessionStart hook (silent, background)
-#   - /ben-pr:setup skill (manual, verbose)
+#   - /local:setup skill (manual, verbose)
 #
 # Skill source: vercel-labs/agent-skills + addyosmani/web-quality-skills +
 #               wshobson/agents + xixu-me/skills (skills.sh registry).
@@ -17,7 +17,7 @@
 set -u  # do NOT set -e — we want to keep trying other skills if one fails
 VERBOSE="${VERBOSE:-0}"
 
-log() { [ "$VERBOSE" = "1" ] && echo "[ben-pr setup] $*" >&2; return 0; }
+log() { [ "$VERBOSE" = "1" ] && echo "[local setup] $*" >&2; return 0; }
 
 # Bail out gracefully if the user has no npx (no Node).
 if ! command -v npx >/dev/null 2>&1; then
@@ -71,5 +71,5 @@ done <<< "$PREREQS"
 log "summary: $installed installed, $skipped skipped, $failed failed"
 
 # Always exit 0 — prereq install is best-effort. A failure should not block
-# the user's session or their /ben-pr:setup invocation.
+# the user's session or their /local:setup invocation.
 exit 0
