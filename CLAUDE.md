@@ -21,14 +21,17 @@ Users install via `/plugin marketplace add 0xbulma/claude-skills` → `/plugin i
         └─ lists ─→ plugins/local/
                           │
                           ├─ .claude-plugin/plugin.json
-                          ├─ skills/{pr-switch,pr-review-local,pr-review-gh,pr-fix,setup,pr-create,extract-plan,tib-create,tip-create,tib-ship}/SKILL.md
-                          ├─ lib/pr-review-base.md   ← shared Steps 3–6
-                          ├─ personas/*.md               ← 11 versioned reviewers (5 baseline + 6 conditional)
+                          ├─ skills/{pr-switch,pr-review-local,pr-review-gh,pr-fix,setup,pr-create,
+                          │         extract-plan,tib-create,tip-create,tib-ship}/SKILL.md
+                          ├─ skills/pr-review-engine/
+                          │   ├─ SKILL.md             ← shared Steps 3–6 (the dispatcher)
+                          │   ├─ agents/*.md          ← 11 versioned reviewers (5 baseline + 6 conditional)
+                          │   └─ references/*.md      ← shared rubrics loaded on demand by agents
                           ├─ hooks/hooks.json            ← SessionStart auto-install
                           └─ bin/install-prereqs.sh      ← idempotent prereq install
 ```
 
-One-way arrow: skills delegate Steps 3–6 to `lib/`, which loops over `personas/`. Nothing points back up.
+One-way arrow: the four PR-flow skills (`pr-review-gh`, `pr-review-local`, `pr-fix`, `tib-ship`) delegate Steps 3–6 to `skills/pr-review-engine/SKILL.md`, which walks `skills/pr-review-engine/agents/*.md` and fans out one sub-agent per matching file. The engine is a real skill following the Anthropic `skill-creator` pattern (`SKILL.md` + `agents/` + `references/`). Nothing points back up.
 
 ## Rubric prereqs (auto-installed)
 
@@ -95,9 +98,9 @@ Semver rules:
 - **Minor** — new persona, new conditional flag, new prereq, new rubric section.
 - **Major** — trigger-flag rename, severity-grading change, or any breaking output-shape change.
 
-## Persona contract
+## Agent contract
 
-Every file in `plugins/local/personas/` has YAML frontmatter:
+Every file in `plugins/local/skills/pr-review-engine/agents/` has YAML frontmatter:
 
 ```yaml
 ---
@@ -115,11 +118,11 @@ severity-guidance: |
 ---
 ```
 
-Adding a persona = drop a new file in `plugins/local/personas/`. If `kind: conditional`, also extend the flag-detection block in Step 4 of `plugins/local/lib/pr-review-base.md`. No `plugin.json` edit needed.
+Adding an agent = drop a new file in `plugins/local/skills/pr-review-engine/agents/`. If `kind: conditional`, also extend the flag-detection block in Step 4 of `plugins/local/skills/pr-review-engine/SKILL.md`. No `plugin.json` edit needed.
 
 ## Forking notes
 
-- **Per-org Web3 SDK**: extend the `<HAS_WEB3>` detector in `lib/pr-review-base.md` Step 4 and `skills/pr-fix/SKILL.md` Steps 4.5/5d.1/12 to include `@your-org/*`.
+- **Per-org Web3 SDK**: extend the `<HAS_WEB3>` detector in `skills/pr-review-engine/SKILL.md` Step 4 and `skills/pr-fix/SKILL.md` Steps 4.5/5d.1/12 to include `@your-org/*`.
 - **Different prereq set**: edit the `PREREQS` heredoc in `bin/install-prereqs.sh`. Each line is `<install-target-name> <owner/repo@skill>`. The persona Bash `find` will discover whatever lands in `~/.claude/skills/<name>/`.
 
 ## Testing

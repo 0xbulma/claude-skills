@@ -1,8 +1,8 @@
 # local
 
-Ten slash-command skills for Claude Code.
+Ten user-invokable slash-command skills + one engine skill (`pr-review-engine`, invoked by other skills, not directly).
 
-**PR navigation / review / fix** (review side delegates to the shared `lib/pr-review-base.md` + 11-persona library)
+**PR navigation / review / fix** (review side delegates to the shared `pr-review-engine` skill + its 11-agent library)
 
 - **`/local:pr-switch <pr-url-or-num>`** — switch the local checkout to a PR's head branch. Accepts a full GitHub PR URL, `owner/repo#num` shorthand, or a bare number. Refuses cross-repo URLs; resolves a dirty tree interactively (stash/commit/discard/abort).
 - **`/local:pr-review-local`** — pre-PR review on the local branch (committed + uncommitted). Terminal-only output. `--fix` applies mechanical fixes.
@@ -21,7 +21,7 @@ Ten slash-command skills for Claude Code.
 
 - **`/local:setup`** — manually install the 18 rubric skills used by the conditional review personas. Same script also runs in the background on every Claude Code session start.
 
-The PR review/fix skills delegate Steps 3–6 to `lib/pr-review-base.md`, which loops over `personas/*.md` and dispatches one Agent per persona in parallel. Baseline personas always fire; conditional personas fire when their trigger flag matches the diff (Web3, React/Next, Tailwind/styling, CI/release).
+The PR review/fix skills delegate Steps 3–6 to `skills/pr-review-engine/SKILL.md`, which walks `skills/pr-review-engine/agents/*.md` and dispatches one sub-agent per matching file in parallel. Baseline agents always fire; conditional agents fire when their trigger flag matches the diff (Web3, React/Next, Tailwind/styling, CI/release). Shared rubric content lives in `skills/pr-review-engine/references/` and is loaded on demand by agents that cite it.
 
 ## Prerequisites
 
