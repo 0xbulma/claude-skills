@@ -26,7 +26,7 @@ Users install via `/plugin marketplace add 0xbulma/claude-skills` → `/plugin i
                           │   │    pr-create,extract-plan,tib-create,tip-create,tib-ship}/SKILL.md
                           │   └─ pr-review-engine/
                           │       ├─ SKILL.md             ← shared Steps 3–6 (the dispatcher)
-                          │       ├─ agents/*.md          ← 11 versioned reviewers (5 baseline + 6 conditional)
+                          │       ├─ agents/*.md          ← 15 versioned reviewers (6 baseline + 9 conditional)
                           │       └─ references/*.md      ← shared rubrics loaded on demand by agents
                           ├─ hooks/hooks.json            ← SessionStart auto-install
                           └─ bin/install-prereqs.sh      ← idempotent prereq install
@@ -40,17 +40,17 @@ One-way arrow: the four PR-flow skills (`pr-review-gh`, `pr-review-local`, `pr-f
 
 | Skill | Source | Backs persona |
 |---|---|---|
-| `vercel-react-best-practices` | `vercel-labs/agent-skills` | `react-next-best-practices` |
-| `vercel-composition-patterns` | `vercel-labs/agent-skills` | `react-next-best-practices` |
-| `vercel-react-native-skills` | `vercel-labs/agent-skills` | `react-next-best-practices` (RN files only) |
-| `next-best-practices` | `vercel-labs/next-skills` | `react-next-best-practices` |
-| `next-cache-components` | `vercel-labs/next-skills` | `react-next-best-practices` |
-| `building-components` | `vercel/components.build` | `react-next-best-practices`, `styling`, `accessibility` |
+| `vercel-react-best-practices` | `vercel-labs/agent-skills` | `react-next` |
+| `vercel-composition-patterns` | `vercel-labs/agent-skills` | `react-next` |
+| `vercel-react-native-skills` | `vercel-labs/agent-skills` | `react-next` (RN files only) |
+| `next-best-practices` | `vercel-labs/next-skills` | `react-next` |
+| `next-cache-components` | `vercel-labs/next-skills` | `react-next` |
+| `building-components` | `vercel/components.build` | `react-next`, `styling`, `accessibility` |
 | `web-design-guidelines` | `vercel-labs/agent-skills` | `styling`, `accessibility` |
 | `tailwind-design-system` | `wshobson/agents` | `styling`, `accessibility` |
-| `ai-elements` | `vercel/ai-elements` | `ai-sdk-best-practices`, `styling` |
-| `streamdown` | `vercel/streamdown` | `ai-sdk-best-practices`, `styling` |
-| `ai-sdk` | `vercel/ai` | `ai-sdk-best-practices` |
+| `ai-elements` | `vercel/ai-elements` | `ai-sdk`, `styling` |
+| `streamdown` | `vercel/streamdown` | `ai-sdk`, `styling` |
+| `ai-sdk` | `vercel/ai` | `ai-sdk` |
 | `turborepo` | `vercel/turborepo` | `ci-security` (when turbo.json touched) |
 | `deploy-to-vercel` | `vercel-labs/agent-skills` | `release-integrity` (when vercel.json / deploy touched) |
 | `vercel-cli-with-tokens` | `vercel-labs/agent-skills` | `release-integrity` (when vercel CLI touched) |

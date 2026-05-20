@@ -81,7 +81,7 @@ Before spawning an implementation sub-agent for a TIP, compute the same `<HAS_RE
 | `<HAS_TAILWIND>` or `<HAS_STYLING>` | `tailwind-design-system`, `web-design-guidelines`, `building-components`               |
 | `<HAS_AI_SDK>`                      | `ai-sdk`, `ai-elements`, `streamdown`                                                  |
 | `<HAS_CI_RELEASE>`                  | `github-actions-docs`, `turborepo`, `deploy-to-vercel`, `vercel-cli-with-tokens`       |
-| `<HAS_WEB3>`                        | (no marketplace skill — the `web3-security` persona body acts as both review and implementation rubric)         |
+| `<HAS_WEB3>`                        | (no marketplace skill — the `web3` persona body acts as both review and implementation rubric)         |
 
 Skills absent from `~/.claude/skills/` are skipped silently (the implementation sub-agent falls back to its general knowledge). This mirrors the persona side's degrade-gracefully behavior. The goal is implementation/review parity: writing to the same rubric that will judge the work avoids predictable review-loop iterations.
 

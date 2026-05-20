@@ -26,17 +26,17 @@ N agents on the same diff.
 
 | Marketplace skill                | Used by                                                       |
 | -------------------------------- | ------------------------------------------------------------- |
-| `vercel-react-best-practices`    | `react-next-best-practices`                                   |
-| `vercel-composition-patterns`    | `react-next-best-practices`                                   |
-| `vercel-react-native-skills`     | `react-next-best-practices` (RN files only)                   |
-| `next-best-practices`            | `react-next-best-practices`                                   |
-| `next-cache-components`          | `react-next-best-practices`                                   |
-| `building-components`            | `react-next-best-practices`, `styling`, `accessibility`       |
+| `vercel-react-best-practices`    | `react-next`                                   |
+| `vercel-composition-patterns`    | `react-next`                                   |
+| `vercel-react-native-skills`     | `react-next` (RN files only)                   |
+| `next-best-practices`            | `react-next`                                   |
+| `next-cache-components`          | `react-next`                                   |
+| `building-components`            | `react-next`, `styling`, `accessibility`       |
 | `web-design-guidelines`          | `styling`, `accessibility`                                    |
 | `tailwind-design-system`         | `styling` (when `<HAS_TAILWIND>`)                             |
-| `ai-elements`                    | `ai-sdk-best-practices`, `styling` (when ai-elements imports) |
-| `streamdown`                     | `ai-sdk-best-practices`, `styling` (when streamdown imports)  |
-| `ai-sdk`                         | `ai-sdk-best-practices`                                       |
+| `ai-elements`                    | `ai-sdk`, `styling` (when ai-elements imports) |
+| `streamdown`                     | `ai-sdk`, `styling` (when streamdown imports)  |
+| `ai-sdk`                         | `ai-sdk`                                       |
 | `turborepo`                      | `ci-security` (when turbo.json touched)                       |
 | `deploy-to-vercel`               | `release-integrity` (when vercel.json / vercel deploy)        |
 | `vercel-cli-with-tokens`         | `release-integrity` (when vercel CLI usage)                   |

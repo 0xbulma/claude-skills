@@ -6,8 +6,8 @@ applies: |
   The project's spec on performance (commonly AGENTS.md / CLAUDE.md §Performance).
   When the project has no codified rule, fall back to this persona's body.
 out-of-scope:
-  - Type discipline / forbidden patterns — see code-quality.
-  - Error-handling depth — see silent-failure-hunter.
+  - Type discipline / forbidden patterns — see correctness.
+  - Error-handling depth — see error-handling.
   - Simplification / over-engineering / redundant logic — see simplification.
   - JSDoc / docstring shape — see documentation.
 focus: |
@@ -29,7 +29,7 @@ The performance eye. Could this be faster while doing the same thing?
 - **Large / barrel imports** that could be tree-shaken (`import _ from 'lodash'` vs `import get from 'lodash/get'`) — especially in client-side bundles.
 - **Missing lazy loading** for heavy components or routes (e.g. dynamic imports for code-split chunks).
 - **Expensive computations in hot paths** without caching / memoization (re-derived on every render or every call when memo would suffice — but watch out for memo-anti-patterns where the dependency array creates a new identity every render).
-- **Memory leaks**: event listeners not cleaned up, intervals not cleared, subscriptions not unsubscribed, `AbortController` not aborted on cleanup.
+- **Memory leaks**: event listeners not cleaned up, intervals not cleared, subscriptions not unsubscribed, `AbortController` not aborted on cleanup. Cross-check `references/effect-cleanup.md` for the canonical inventory and fix patterns.
 - **N+1 query patterns** or redundant data fetching where a batched call would do.
 - **Large objects or arrays created on every render / call** that could be hoisted to module scope or cached.
 - **`Array.prototype.includes` on large arrays in a hot loop** — `Set` lookup is O(1).
@@ -45,7 +45,7 @@ The performance eye. Could this be faster while doing the same thing?
 ## Out-of-scope reminders (for the sub-agent)
 
 - Do NOT review simplification / over-engineering / redundant logic — `simplification`.
-- Do NOT review type-safety / `any` / forbidden patterns — `code-quality`.
-- Do NOT review error-handling depth — `silent-failure-hunter`.
+- Do NOT review type-safety / `any` / forbidden patterns — `correctness`.
+- Do NOT review error-handling depth — `error-handling`.
 - Do NOT review JSDoc / docstring shape — `documentation`.
 - Do NOT propose architectural rewrites (extract this entire module / split this package) — keep findings local to the diff.

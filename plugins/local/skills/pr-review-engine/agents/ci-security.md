@@ -10,7 +10,7 @@ applies: |
 out-of-scope:
   - Release/publish flow and changesets — see release-integrity.
   - Lockfile drift, .npmrc, dependency hygiene — see dependencies.
-  - Code quality of build/test scripts themselves — see code-quality, simplification, performance.
+  - Code quality of build/test scripts themselves — see correctness, simplification, performance.
   - JSDoc / docstrings on exported symbols touched by CI scripts — see documentation.
 focus: |
   GitHub Actions workflow injection, action pinning, workflow `permissions:`
@@ -51,6 +51,8 @@ Fires when `<HAS_WORKFLOWS>` is true — any changed file matches:
 
 ### Workflow injection (CRITICAL)
 
+Cross-check `references/injection.md` for the canonical injection rubric; this section narrows it to the GitHub Actions expression-interpolation surface.
+
 - Any `${{ github.event.* }}`, `${{ github.head_ref }}`, or other attacker-controllable input interpolated directly into a `run:` block, `shell:` invocation, or third-party-action argument. The fix is always: assign to an env var first, then reference `$ENV_VAR` in the shell — never expand untrusted GitHub-context expressions in `run:` strings.
 - `pull_request_target` triggers that also check out the PR head (`actions/checkout` with `ref: ${{ github.event.pull_request.head.sha }}` or similar). This pattern executes attacker code with write-scoped credentials. Flag unless the workflow demonstrably never runs the checked-out code (no install, no test, no script).
 - `issue_comment` or `pull_request_review_comment` triggers that act on comment text without ACL gating (e.g. checking `github.event.comment.author_association == 'OWNER'`).
@@ -69,6 +71,8 @@ Fires when `<HAS_WORKFLOWS>` is true — any changed file matches:
 
 ### Secret exposure in workflows (HIGH)
 
+Cross-check `references/secrets.md` for the canonical severity and fix patterns; this section narrows the rubric to the `secrets.*` exposure surface in CI workflows specifically.
+
 - `secrets.*` interpolated into a `run:` block where it lands in logs (shell echo, `set -x`, error paths). Use `env:` to bind the secret, then reference `$VAR` inside the script so GitHub's redaction works.
 - Secrets passed as arguments to third-party actions whose source is not pinned to a SHA.
 - New secret names introduced without a matching reference in the repo's secrets-management doc (if `SECURITY.md` or similar documents them).
@@ -78,3 +82,22 @@ Fires when `<HAS_WORKFLOWS>` is true — any changed file matches:
 - Return findings in the same JSON shape as every other persona: `[{severity, file, line, description}]`.
 - `description` must include both the *what* (concrete excerpt from the diff) and the *how to fix* (specific replacement, action SHA, env-var rewrite, etc.). Generic warnings without a fix are not actionable.
 - If no CI-security concerns survive the diff scope, return `[]` — do NOT speculate about workflows that weren't changed.
+
+## Fix rubric
+
+(Consumed by `pr-fix` and by the engine when invoked with `<MODE>=fix`.)
+
+Apply only the mechanical fixes that have a single correct shape:
+- Rewrite `${{ github.event.X }}` → `env: { VAR: ${{ github.event.X }} }`
+  + `$VAR` in `run:`. Confirm the `run:` script doesn't itself echo `$VAR`.
+- Pin floating action refs to a full commit SHA + trailing tag comment.
+  Resolve the SHA from the action's latest tag matching the floating ref.
+- Add an explicit `permissions:` block to a workflow that lacked one.
+  Default the new block to the **narrowest** scope the workflow's steps
+  actually use; flag for human review if any step needs `write`.
+
+**Do not** auto-apply: removing a `pull_request_target` trigger,
+changing `secrets:` plumbing across reusable workflows, or modifying
+which workflows fire on which events — surface those for human review.
+
+Cross-check `references/injection.md` and `references/secrets.md`.

@@ -2,7 +2,7 @@
 
 | Field              | Value                                                                          |
 | ------------------ | ------------------------------------------------------------------------------ |
-| **Status**         | Shipped (partial — splits + marketplace-rubrics done; cosmetic renames + full rubric extraction deferred) |
+| **Status**         | Shipped (all phases — splits, renames, `references/`, `## Fix rubric` sections, `mode=fix` filter) |
 | **Date**           | 2026-05-20                                                                     |
 | **Author**         | @0xbulma                                                                       |
 | **Related TIB(s)** | [TIB-2026-05-20-pr-review-engine-skill](../tibs/TIB-2026-05-20-pr-review-engine-skill.md) |

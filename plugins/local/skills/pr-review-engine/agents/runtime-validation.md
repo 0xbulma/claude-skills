@@ -12,7 +12,7 @@ applies: |
   review. `tib-ship` excludes this persona from its iteration loop and runs it
   once after static convergence so dev-server boot is not paid N times.
 out-of-scope:
-  - Static type, lint, or correctness issues — see `code-quality` / `silent-failure-hunter`.
+  - Static type, lint, or correctness issues — see `correctness` / `error-handling`.
   - Accessibility lint against static markup — see `styling`, `accessibility`.
   - Performance profiling beyond "did the page render and stay quiet?" — out of scope here.
 focus: |

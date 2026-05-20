@@ -26,21 +26,21 @@ Works on any project — but the conditional personas are tuned for TS/JS/JSX/TS
 │   │   └── pr-review-engine/         # shared review engine (was lib/ + personas/)
 │   │       ├── SKILL.md                          # dispatcher: Steps 3–6
 │   │       ├── agents/                           # 15 reviewers (6 baseline + 9 conditional)
-│   │       │   ├── code-quality.md                   # baseline
-│   │       │   ├── documentation.md                  # baseline
+│   │       │   ├── correctness.md                   # baseline
+│   │       │   ├── docs.md                            # baseline
 │   │       │   ├── performance.md                    # baseline
-│   │       │   ├── silent-failure-hunter.md          # baseline
+│   │       │   ├── error-handling.md          # baseline
 │   │       │   ├── simplification.md                 # baseline
-│   │       │   ├── test-coverage.md                  # baseline
+│   │       │   ├── tests.md                  # baseline
 │   │       │   ├── accessibility.md                  # conditional (<HAS_TAILWIND> OR <HAS_STYLING>)
-│   │       │   ├── ai-sdk-best-practices.md          # conditional (<HAS_AI_SDK>)
+│   │       │   ├── ai-sdk.md          # conditional (<HAS_AI_SDK>)
 │   │       │   ├── ci-security.md                    # conditional (<HAS_WORKFLOWS>)
 │   │       │   ├── dependencies.md                   # conditional (<HAS_DEPS>)
-│   │       │   ├── react-next-best-practices.md      # conditional (<HAS_REACT>)
+│   │       │   ├── react-next.md      # conditional (<HAS_REACT>)
 │   │       │   ├── release-integrity.md              # conditional (<HAS_RELEASE>)
 │   │       │   ├── runtime-validation.md             # conditional (<HAS_ROUTE_UI>)
 │   │       │   ├── styling.md                        # conditional (<HAS_TAILWIND> OR <HAS_STYLING>)
-│   │       │   └── web3-security.md                  # conditional (<HAS_WEB3>)
+│   │       │   └── web3.md                  # conditional (<HAS_WEB3>)
 │   │       └── references/                       # shared rubrics loaded on demand
 │   ├── hooks/hooks.json              # SessionStart auto-install
 │   ├── bin/install-prereqs.sh        # idempotent prereq installer
@@ -76,17 +76,17 @@ Works on any project — but the conditional personas are tuned for TS/JS/JSX/TS
 
 | Skill | Source | Domain | Persona it backs |
 |---|---|---|---|
-| `vercel-react-best-practices` | `vercel-labs/agent-skills` | React/Next.js perf | `react-next-best-practices` |
-| `vercel-composition-patterns` | `vercel-labs/agent-skills` | React composition | `react-next-best-practices` |
-| `vercel-react-native-skills` | `vercel-labs/agent-skills` | React Native + Expo | `react-next-best-practices` (RN files) |
-| `next-best-practices` | `vercel-labs/next-skills` | Next.js conventions, RSC | `react-next-best-practices` |
-| `next-cache-components` | `vercel-labs/next-skills` | Next.js 16 Cache Components | `react-next-best-practices` |
-| `building-components` | `vercel/components.build` | Composable UI components | `react-next-best-practices`, `styling`, `accessibility` |
+| `vercel-react-best-practices` | `vercel-labs/agent-skills` | React/Next.js perf | `react-next` |
+| `vercel-composition-patterns` | `vercel-labs/agent-skills` | React composition | `react-next` |
+| `vercel-react-native-skills` | `vercel-labs/agent-skills` | React Native + Expo | `react-next` (RN files) |
+| `next-best-practices` | `vercel-labs/next-skills` | Next.js conventions, RSC | `react-next` |
+| `next-cache-components` | `vercel-labs/next-skills` | Next.js 16 Cache Components | `react-next` |
+| `building-components` | `vercel/components.build` | Composable UI components | `react-next`, `styling`, `accessibility` |
 | `web-design-guidelines` | `vercel-labs/agent-skills` | Vercel Web Interface Guidelines | `styling`, `accessibility` |
 | `tailwind-design-system` | `wshobson/agents` | Tailwind v4, design tokens | `styling`, `accessibility` |
-| `ai-elements` | `vercel/ai-elements` | AI chat UI components | `ai-sdk-best-practices`, `styling` |
-| `streamdown` | `vercel/streamdown` | Streaming Markdown renderer | `ai-sdk-best-practices`, `styling` |
-| `ai-sdk` | `vercel/ai` | Vercel AI SDK | `ai-sdk-best-practices` |
+| `ai-elements` | `vercel/ai-elements` | AI chat UI components | `ai-sdk`, `styling` |
+| `streamdown` | `vercel/streamdown` | Streaming Markdown renderer | `ai-sdk`, `styling` |
+| `ai-sdk` | `vercel/ai` | Vercel AI SDK | `ai-sdk` |
 | `turborepo` | `vercel/turborepo` | Monorepo build orchestration | `ci-security` |
 | `deploy-to-vercel` | `vercel-labs/agent-skills` | Vercel deployment | `release-integrity` |
 | `vercel-cli-with-tokens` | `vercel-labs/agent-skills` | Vercel CLI / tokens | `release-integrity` |
@@ -160,20 +160,20 @@ See [CLAUDE.md](./CLAUDE.md) for the full mental model, persona contract, versio
 
 6 baseline (always fire):
 
-- `code-quality` — type discipline, code smells, naming, security primitives.
-- `silent-failure-hunter` — swallowed errors, missing error states, dead code paths.
+- `correctness` — type discipline, code smells, naming, security primitives.
+- `error-handling` — swallowed errors, missing error states, dead code paths.
 - `documentation` — JSDoc/TSDoc on exports, Markdown accuracy, pointer integrity.
-- `test-coverage` — missing tests, layout enforcement.
+- `tests` — missing tests, layout enforcement.
 - `simplification` — unnecessary complexity, redundant logic, over-engineering.
 - `performance` — barrel imports, memory leaks, N+1, memoization correctness.
 
 9 conditional (fire only when their flag matches the diff):
 
-- `react-next-best-practices` — `<HAS_REACT>` — Server Components, hooks, React 19 APIs, Next.js conventions, Cache Components. Loads `vercel-react-best-practices`, `vercel-composition-patterns`, `next-best-practices`, `next-cache-components`, `building-components` (+ `vercel-react-native-skills` when RN code detected).
+- `react-next` — `<HAS_REACT>` — Server Components, hooks, React 19 APIs, Next.js conventions, Cache Components. Loads `vercel-react-best-practices`, `vercel-composition-patterns`, `next-best-practices`, `next-cache-components`, `building-components` (+ `vercel-react-native-skills` when RN code detected).
 - `styling` — `<HAS_TAILWIND> OR <HAS_STYLING>` — Tailwind, design tokens, styling-architecture consistency. Loads `tailwind-design-system`, `web-design-guidelines`, `building-components` (+ `ai-elements`/`streamdown` when their imports are present).
 - `accessibility` — `<HAS_TAILWIND> OR <HAS_STYLING>` — ARIA, keyboard nav, focus management, alt text, label association. Loads `web-design-guidelines`, `building-components`.
-- `ai-sdk-best-practices` — `<HAS_AI_SDK>` — Vercel AI SDK usage, streaming, tool calls, structured output, useChat. Loads `ai-sdk`, `ai-elements`, `streamdown`.
-- `web3-security` — `<HAS_WEB3>` — contract calls, permits, chainId validation, signature handling.
+- `ai-sdk` — `<HAS_AI_SDK>` — Vercel AI SDK usage, streaming, tool calls, structured output, useChat. Loads `ai-sdk`, `ai-elements`, `streamdown`.
+- `web3` — `<HAS_WEB3>` — contract calls, permits, chainId validation, signature handling.
 - `ci-security` — `<HAS_WORKFLOWS>` — workflow injection, action pinning, `permissions:` scopes, secret exposure. Loads `github-actions-docs`, `turborepo`.
 - `release-integrity` — `<HAS_RELEASE>` — publish flow, provenance, release-commit signing, Changesets wiring. Loads `deploy-to-vercel`, `vercel-cli-with-tokens`.
 - `dependencies` — `<HAS_DEPS>` — lockfile drift, `.npmrc` hygiene, typosquats, postinstall scripts.

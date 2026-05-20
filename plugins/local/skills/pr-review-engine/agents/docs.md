@@ -1,5 +1,5 @@
 ---
-name: documentation
+name: docs
 version: 1.0.0
 kind: baseline
 applies: |
@@ -7,9 +7,9 @@ applies: |
   README / spec docs that describe the public surface). When the project has
   no codified rule, fall back to this persona's body as the rubric.
 out-of-scope:
-  - Code correctness — see code-quality.
-  - Test coverage for new code paths — see test-coverage.
-  - Architectural changes to package boundaries — see code-quality's cross-file-impact section.
+  - Code correctness — see correctness.
+  - Test coverage for new code paths — see tests.
+  - Architectural changes to package boundaries — see correctness's cross-file-impact section.
 focus: |
   1. JSDoc / TSDoc / docstring shape on exported symbols (where the project has a style guide).
   2. Markdown documentation accuracy (README, architecture docs, contributor guides).
@@ -64,7 +64,7 @@ For each Markdown file affected, flag:
 For every Markdown link, path reference, or symbol pointer in the changed files (and in files that reference anything the diff renamed/moved):
 
 - **Internal Markdown links must resolve.** `[label](./path/to/file.md)` — the path must exist. Anchors `#section-name` must match a heading in the target file (slugified — GitHub's convention).
-- **Path references in prose must resolve.** Lines like `` Reference `docs/style.md` `` or `` Read `.agents/personas/web3-security.md` `` are pointers; the file must exist.
+- **Path references in prose must resolve.** Lines like `` Reference `docs/style.md` `` or `` Read `.agents/personas/web3.md` `` are pointers; the file must exist.
 - **Frontmatter references must resolve.** Any `applies:`, `trigger:`, `canonical-rules:`, `out-of-scope:` field referencing other files or flags must point at things that exist.
 - **Renames cascade.** If the diff renames or moves a file (detect via `git diff --name-status --find-renames`), every reference to the old path in any tracked Markdown / persona / skill / command file must be updated. Grep for the old basename in the repo and surface unresolved hits.
 - **Removed exports / removed files.** If the diff removes a public export or a file, grep the repo for references and flag any that survive.
@@ -92,7 +92,27 @@ If the project has no persona system, skip this entire section.
 
 ## Out-of-scope reminders (for the sub-agent)
 
-- Do NOT review TypeScript / code correctness — `code-quality`.
-- Do NOT review test coverage — `test-coverage`.
+- Do NOT review TypeScript / code correctness — `correctness`.
+- Do NOT review test coverage — `tests`.
 - Do NOT propose new docs that don't already exist somewhere in the diff or its references. Adding "the README should also explain X" is scope creep unless the diff specifically changed X.
 - Do NOT flag missing JSDoc on internal (non-exported) symbols.
+
+## Fix rubric
+
+(Consumed by `pr-fix` and by the engine when invoked with `<MODE>=fix`.)
+
+Mechanical fixes only:
+- Add missing JSDoc / TSDoc on a newly exported symbol, following the
+  project's existing JSDoc style (look for examples in
+  `<PROJECT_CONTEXT>` first; otherwise follow the in-repo majority style).
+- Fix a broken `[link](path)` reference whose target file was renamed
+  inside this same diff (the new path is unambiguous).
+- Update a stale path reference in `CLAUDE.md` / `README.md` /
+  `AGENTS.md` when the file move it describes happened in this same
+  diff.
+- Restore a missing back-link between a persona file's frontmatter
+  `applies:` callout and the corresponding section heading in the spec.
+
+**Do not** auto-apply: rewording prose, restructuring a doc, adding
+new docs that didn't exist before, or "improving" docstrings already
+present and correct — surface for human review.

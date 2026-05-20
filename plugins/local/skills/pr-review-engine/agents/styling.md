@@ -8,9 +8,9 @@ applies: |
   marketplace skill rubric at run time when <HAS_TAILWIND> is true.
 out-of-scope:
   - Accessibility (ARIA, keyboard, focus, alt) — see accessibility.
-  - React patterns (Server Components, hooks, effects) — see react-next-best-practices.
-  - General code quality — see code-quality.
-  - Test coverage — see test-coverage.
+  - React patterns (Server Components, hooks, effects) — see react-next.
+  - General code quality — see correctness.
+  - Test coverage — see tests.
 focus: |
   Styling consistency, Tailwind discipline, design-token usage.
 canonical-rules: |
@@ -58,6 +58,6 @@ For each: if the rubric resolves to a non-empty path, Read it and print `Loaded 
 ## Out-of-scope reminders (for the sub-agent)
 
 - Do NOT review a11y violations (ARIA, keyboard, focus) — `accessibility`.
-- Do NOT review React patterns (hooks, effects, Server Components) — `react-next-best-practices`.
-- Do NOT review general code quality / type safety — `code-quality`.
+- Do NOT review React patterns (hooks, effects, Server Components) — `react-next`.
+- Do NOT review general code quality / type safety — `correctness`.
 - Do NOT propose new design tokens or component primitives — that's design-system work, not PR review.

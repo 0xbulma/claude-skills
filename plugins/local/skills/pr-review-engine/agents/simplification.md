@@ -6,8 +6,8 @@ applies: |
   The project's spec on code style (commonly AGENTS.md / CLAUDE.md §Code style).
   When the project has no codified rule, fall back to this persona's body.
 out-of-scope:
-  - Type discipline / forbidden patterns — see code-quality.
-  - Error-handling depth — see silent-failure-hunter.
+  - Type discipline / forbidden patterns — see correctness.
+  - Error-handling depth — see error-handling.
   - Performance issues (memory leaks, N+1, barrel imports) — see performance.
   - Mechanical formatter style (indent, organize-imports) — defer to the project's lint contract.
   - JSDoc / docstring shape — see documentation.
@@ -41,8 +41,8 @@ The simplification eye. Could this be smaller while doing the same thing?
 ## Out-of-scope reminders (for the sub-agent)
 
 - Do NOT review performance issues (memory leaks, barrel imports, N+1) — `performance`.
-- Do NOT review type-safety / `any` / forbidden patterns — `code-quality`.
-- Do NOT review error-handling depth — `silent-failure-hunter`.
+- Do NOT review type-safety / `any` / forbidden patterns — `correctness`.
+- Do NOT review error-handling depth — `error-handling`.
 - Do NOT review JSDoc / docstring shape — `documentation`.
 - Do NOT propose architectural rewrites (extract this entire module / split this package) — that's scope creep on a single PR; keep findings local to the diff.
 - Defer mechanical style (indent, semicolons, organize-imports) to the project's formatter / linter.

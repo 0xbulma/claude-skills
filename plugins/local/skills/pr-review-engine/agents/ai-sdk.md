@@ -1,5 +1,5 @@
 ---
-name: ai-sdk-best-practices
+name: ai-sdk
 version: 1.0.0
 kind: conditional
 trigger: <HAS_AI_SDK>
@@ -7,8 +7,8 @@ applies: |
   The project's spec for Vercel AI SDK usage, if any. The persona ALSO loads
   the Vercel-published AI SDK skills as run-time rubric — see Run-time setup.
 out-of-scope:
-  - General React/Next patterns (Server Components, hooks, effects) — see react-next-best-practices.
-  - General code quality / type safety — see code-quality.
+  - General React/Next patterns (Server Components, hooks, effects) — see react-next.
+  - General code quality / type safety — see correctness.
   - Chat UI styling / a11y — see styling, accessibility.
   - CI/release of AI-powered code — see ci-security, release-integrity, dependencies.
 focus: |
@@ -59,7 +59,7 @@ For each non-empty path, Read the rubric in full and print `Loaded conditional s
 - `streamText` / `streamObject` whose returned stream is consumed twice (once for response, once for accumulation). Only one consumer per stream — use `.toDataStreamResponse()` or `.toTextStreamResponse()` once.
 - Missing `await` on the stream-final accessors (`.finishReason`, `.usage`) inside a server action when the caller depends on the final value.
 - `useChat` / `useCompletion` without `onError` / `onFinish` — silent failures and orphaned UI state. **Medium**.
-- AbortController not wired up — long streams can't be cancelled. **Medium**.
+- AbortController not wired up — long streams can't be cancelled. **Medium**. Cross-check `references/effect-cleanup.md`.
 
 ### Tool calling
 
@@ -81,7 +81,7 @@ For each non-empty path, Read the rubric in full and print `Loaded conditional s
 
 ### AI Elements / Streamdown UI
 
-- `<Streamdown>` rendering user-controlled markdown without sanitization config — XSS surface. **Critical** if untrusted input flows in.
+- `<Streamdown>` rendering user-controlled markdown without sanitization config — XSS surface. **Critical** if untrusted input flows in. Cross-check `references/injection.md`.
 - AI Elements components inside a Server Component without `'use client'` — they're client-only. **High**.
 - Custom transforms / renderers in Streamdown that don't carry the streaming-cursor / caret behavior — flickers and broken cursor positioning during stream.
 
@@ -99,7 +99,7 @@ For each non-empty path, Read the rubric in full and print `Loaded conditional s
 
 ## Out-of-scope reminders (for the sub-agent)
 
-- Do NOT review generic React patterns (hooks, effects, Server Components) — `react-next-best-practices`.
+- Do NOT review generic React patterns (hooks, effects, Server Components) — `react-next`.
 - Do NOT review Tailwind / a11y on chat UI — `styling`, `accessibility`.
 - Do NOT review provider package version bumps in `package.json` — `ci-security`, `release-integrity`, `dependencies` covers dep hygiene.
 - Do NOT propose new providers or refactors of the AI architecture — out of PR scope.

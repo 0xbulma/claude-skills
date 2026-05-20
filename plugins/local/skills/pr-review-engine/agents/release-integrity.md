@@ -10,8 +10,8 @@ applies: |
 out-of-scope:
   - GitHub Actions workflow injection / action pinning / permissions — see ci-security.
   - Lockfile drift, .npmrc, dependency hygiene — see dependencies.
-  - Code quality of build/test scripts themselves — see code-quality.
-  - Test coverage of the publish flow — see test-coverage.
+  - Code quality of build/test scripts themselves — see correctness.
+  - Test coverage of the publish flow — see tests.
 focus: |
   Publish-flow integrity (provenance, auth tokens), release-commit signing,
   write-token hardening, Changesets / release-bot wiring, deployment workflows.
@@ -78,3 +78,22 @@ Fires when `<HAS_RELEASE>` is true — any changed file matches:
 - Return findings in the same JSON shape as every other persona: `[{severity, file, line, description}]`.
 - `description` must include both the *what* (concrete excerpt from the diff) and the *how to fix*. Generic warnings without a fix are not actionable.
 - If no release-integrity concerns survive the diff scope, return `[]`.
+
+## Fix rubric
+
+(Consumed by `pr-fix` and by the engine when invoked with `<MODE>=fix`.)
+
+Mechanical fixes only:
+- Add `--provenance` to an `npm publish` / `pnpm publish` invocation
+  that lost it, provided the package was previously published with
+  provenance.
+- Set `github-actions[bot]` as the repo-local git identity before a
+  `git commit` / `git tag` in a release workflow.
+- Add a missing `environment:` gate (with reviewers) before a publish
+  step in a workflow that newly publishes.
+
+**Do not** auto-apply: replacing `createCommitOnBranch` with local
+`git commit` or vice versa (those are signing-identity decisions),
+changing tag scope between `next` and `latest`, or modifying
+`.changeset/config.json`'s fixed-version / linked / baseBranch fields —
+surface for human review.

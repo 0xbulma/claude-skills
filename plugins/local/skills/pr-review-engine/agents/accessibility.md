@@ -7,8 +7,8 @@ applies: |
   WCAG 2.1 AA + the project's a11y spec, if any.
 out-of-scope:
   - Styling consistency, Tailwind discipline, design-token usage — see styling.
-  - React patterns (Server Components, hooks, effects) — see react-next-best-practices.
-  - General code quality — see code-quality.
+  - React patterns (Server Components, hooks, effects) — see react-next.
+  - General code quality — see correctness.
 focus: |
   Accessibility (a11y): ARIA, keyboard navigation, focus management, alt text,
   label association, focus traps.
@@ -49,5 +49,5 @@ If a rubric resolves empty, log degradation and continue with the inline rubric 
 ## Out-of-scope reminders (for the sub-agent)
 
 - Do NOT review Tailwind / token / styling-architecture concerns — `styling`.
-- Do NOT review React patterns (hooks, effects, Server Components) — `react-next-best-practices`.
-- Do NOT review general code quality / type safety — `code-quality`.
+- Do NOT review React patterns (hooks, effects, Server Components) — `react-next`.
+- Do NOT review general code quality / type safety — `correctness`.
