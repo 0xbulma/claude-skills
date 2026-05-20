@@ -51,6 +51,8 @@ Extract `<OWNER>`, `<REPO>`, `<PR_NUMBER>` from `$ARGUMENTS`:
 - **Bare number** — `^[0-9]+$` → leave `<OWNER>` / `<REPO>` empty (filled in Step 2).
 - **Anything else** — report what you saw and ask the user for a valid form.
 
+**Then validate `<PR_NUMBER>` against `^[0-9]+$` regardless of which path produced it** — the URL and shorthand regexes can yield non-numeric captures on malformed input, and `<PR_NUMBER>` flows directly into the shell snippets in Steps 4–7 and into the stash message in Step 5. If validation fails, refuse and ask for a valid form.
+
 ## Step 2: Detect the current repo
 
 ```bash
@@ -78,6 +80,8 @@ Do not clone, do not `cd`, do not attempt `gh pr checkout` anyway. Stop.
 gh pr view <PR_NUMBER> --json title,baseRefName,headRefName,headRefOid,state,isCrossRepository,headRepository,author,url
 ```
 
+**Check the exit code.** If `gh pr view` exits non-zero (auth missing, network down, PR not found, repo is private without access), do not proceed — surface gh's stderr to the user verbatim and stop. Do not run Step 5 or Step 6 with empty/undefined placeholders.
+
 If `state` is `MERGED` or `CLOSED`, surface the state and ask the user whether to continue — the branch may still be inspectable, but they probably meant a different PR.
 
 ## Step 5: Clean-tree check (interactive)
@@ -88,9 +92,9 @@ git status --porcelain
 
 If output is non-empty, **show the user a 4-way choice**. Wait for their answer before doing anything else:
 
-- **Stash** — run `git stash push -u -m "pr-switch: auto-stash before checkout of PR #<PR_NUMBER>"`, then continue to Step 6. After the checkout completes, remind the user of the stash message so they can `git stash list` / `git stash pop` later.
+- **Stash** — run `git stash push -u -m "pr-switch: auto-stash before checkout of PR #<PR_NUMBER>"`. **Check the exit code**; if non-zero (e.g. rebase/merge in progress, partial index, detached HEAD edge case), abort the skill — do NOT proceed to Step 6, because `gh pr checkout` would otherwise clobber the still-dirty tree. After a successful checkout, remind the user of the stash message so they can `git stash list` / `git stash pop` later.
 - **Commit** — abort the skill cleanly with: _"Commit your changes, then re-run `/local:pr-switch <PR_NUMBER>`."_ Don't try to commit for them.
-- **Discard** — only after explicit confirmation (a second yes/no): run `git checkout -- .` then `git clean -fd`. Warn this is destructive and untracked files will be lost. If the user wavers, default to Abort.
+- **Discard** — only after explicit confirmation (a second yes/no): `cd "$(git rev-parse --show-toplevel)"` first so the cleanup applies to the whole repo regardless of cwd, then run `git checkout -- .`, **check its exit code** (interrupted merges leave unmerged paths that this command can't restore — if non-zero, surface the error and stop **before** running `git clean -fd`), and finally run `git clean -fd` to remove untracked files. Warn this is destructive and that untracked files will be lost. If the user wavers, default to Abort.
 - **Abort** — stop, change nothing.
 
 If the tree is clean, skip the prompt and go straight to Step 6.
@@ -103,6 +107,12 @@ gh pr checkout <PR_NUMBER>
 ```
 
 `gh pr checkout` handles fork PRs via the `isCrossRepository` metadata — no special-casing needed.
+
+**Check the exit code of `gh pr checkout`.** Common failure modes — local branch already exists with divergent commits, fork-checkout permission error, dirty submodules, mid-fetch network drop — leave the working tree in a half-switched state. On failure:
+
+1. Surface gh's stderr to the user verbatim.
+2. If Step 5 stashed, tell the user the stash is intact (do not auto-`stash pop` — the tree may be in an inconsistent state).
+3. Stop. Do NOT proceed to Step 7 or print a "Switched to PR #N" summary.
 
 ## Step 7: Report
 

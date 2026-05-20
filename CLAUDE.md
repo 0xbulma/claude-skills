@@ -4,14 +4,14 @@ Repo-level guidance for Claude Code working on this repo.
 
 ## What this repo is
 
-A Claude Code **plugin marketplace** containing a single plugin (`local`) with seven slash-command skills:
+A Claude Code **plugin marketplace** containing a single plugin (`local`) with eight slash-command skills:
 
-- **PR review / fix** — `pr-review-local`, `pr-review-gh`, `pr-fix`, `setup`
+- **PR navigation / review / fix** — `pr-switch` (check out a PR's branch from a URL/number), `pr-review-local`, `pr-review-gh`, `pr-fix`, `setup`
 - **PR / workflow authoring** — `pr-create` (draft PR from the current diff), `extract-plan` (TIB/ADR → Linear project + milestones + issues), `tib-create` (scaffold a new TIB from template)
 
 The review side and its persona library are **optimized for TypeScript + React + Vercel** codebases — JSX/TSX detection, Server Components, React 19 APIs, Tailwind, Vercel's Web Interface Guidelines, and Web3 (viem/wagmi/ethers) when present. It works on any project, but the conditional personas are tuned for the TS/React/Vercel stack. The three authoring skills (`pr-create`, `extract-plan`, `tib-create`) are repo-agnostic.
 
-Users install via `/plugin marketplace add 0xbulma/claude-skills` → `/plugin install local@claude-skills`. They invoke the skills as `/local:pr-review-local`, `/local:pr-review-gh`, `/local:pr-fix`, `/local:setup`, `/local:pr-create`, `/local:extract-plan`, `/local:tib-create`.
+Users install via `/plugin marketplace add 0xbulma/claude-skills` → `/plugin install local@claude-skills`. They invoke the skills as `/local:pr-switch`, `/local:pr-review-local`, `/local:pr-review-gh`, `/local:pr-fix`, `/local:setup`, `/local:pr-create`, `/local:extract-plan`, `/local:tib-create`.
 
 ## Mental model
 
@@ -21,7 +21,7 @@ Users install via `/plugin marketplace add 0xbulma/claude-skills` → `/plugin i
         └─ lists ─→ plugins/local/
                           │
                           ├─ .claude-plugin/plugin.json
-                          ├─ skills/{pr-review-local,pr-review-gh,pr-fix,setup,pr-create,extract-plan,tib-create}/SKILL.md
+                          ├─ skills/{pr-switch,pr-review-local,pr-review-gh,pr-fix,setup,pr-create,extract-plan,tib-create}/SKILL.md
                           ├─ lib/pr-review-base.md   ← shared Steps 3–6
                           ├─ personas/*.md               ← 10 versioned reviewers
                           ├─ hooks/hooks.json            ← SessionStart auto-install
