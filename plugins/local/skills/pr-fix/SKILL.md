@@ -408,7 +408,10 @@ For each file with findings, build a complete understanding:
 
    - **CI / release files** (fix touches `.github/workflows/**`, `.github/actions/**`, `.changeset/**`, `pnpm-lock.yaml` / `package-lock.json` / `yarn.lock`, `pnpm-workspace.yaml`, `.npmrc`, or a `package.json` `scripts.*publish*` / `scripts.*release*` field):
      - If the target repo defines its own CI/release rules (look for a `Review automation` / `CI/release security` / `Release` section in the root `AGENTS.md` / `CLAUDE.md`, or a dedicated `docs/security/` / `SECURITY.md`), read that section first — it is authoritative.
-     - Otherwise (or in addition) use `${CLAUDE_PLUGIN_ROOT}/skills/pr-review-engine/agents/ci-release-security.md` as the rubric: workflow injection, action pinning, write-token hardening, lockfile drift, publish-flow integrity, `.npmrc` hygiene.
+     - Otherwise (or in addition) use the appropriate split rubric from `${CLAUDE_PLUGIN_ROOT}/skills/pr-review-engine/agents/`:
+       - `ci-security.md` for workflow injection, action pinning, `permissions:` scopes, secret exposure (when `.github/workflows/**` / `.github/actions/**` / `turbo.json` is the surface).
+       - `release-integrity.md` for publish flow, provenance, release-commit signing, Changesets wiring (when `.changeset/**` / `vercel.json` / `scripts.*publish*|*release*|*deploy*` is the surface).
+       - `dependencies.md` for lockfile drift, `.npmrc` hygiene, typosquats (when lockfiles / `.npmrc` / `pnpm-workspace.yaml` is the surface).
 
    - **Persona / spec-layering files** (fix touches `AGENTS.md` / `CLAUDE.md` itself, or any file under `.agents/personas/` / `.claude/agents/` / similar):
      - If the target repo uses a persona system (look for `.agents/personas/` or `.claude/agents/` and any `> Applied by personas: …` callouts in the spec), the bidirectional-backlink invariant applies: changes to a persona's `applies:` frontmatter must atomically update the corresponding callout in the spec, and vice versa. A one-sided fix is incomplete.

@@ -13,7 +13,7 @@ applies: |
   once after static convergence so dev-server boot is not paid N times.
 out-of-scope:
   - Static type, lint, or correctness issues — see `code-quality` / `silent-failure-hunter`.
-  - Accessibility lint against static markup — see `ui-styling-accessibility`.
+  - Accessibility lint against static markup — see `styling`, `accessibility`.
   - Performance profiling beyond "did the page render and stay quiet?" — out of scope here.
 focus: |
   Does the change actually work in a browser? Boot the dev server, navigate the

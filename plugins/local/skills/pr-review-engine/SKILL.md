@@ -97,7 +97,10 @@ Compute boolean flags from the diff and from changed files' content. These flags
 - `<HAS_REACT>` — true if any changed file has extension `.jsx`/`.tsx`, OR imports `react`, `react-dom`, `next/*`, `@tanstack/react-*`, `@apollo/client`, OR contains `'use client'` / `'use server'` directives.
 - `<HAS_TAILWIND>` — true if `<HAS_REACT>` AND any changed file contains a Tailwind-shaped class string (regex match in JSX: `className="[^"]*\b(flex|grid|p-[0-9]|m-[0-9]|text-|bg-|border-|rounded-)`).
 - `<HAS_STYLING>` — true if any changed file imports `styled-components`, `@emotion/*`, `tss-react`, `*.module.css`, `*.module.scss`, OR contains a11y attributes (`role=`, `aria-`, `tabIndex`).
-- `<HAS_CI_RELEASE>` — true if any changed file matches `.github/workflows/**`, `.github/actions/**`, `.changeset/**`, `pnpm-lock.yaml`, `package-lock.json`, `yarn.lock`, `pnpm-workspace.yaml`, `.npmrc` (any level), `turbo.json`, `vercel.json`, OR any `package.json` whose `scripts.*publish*` / `scripts.*release*` / `scripts.*deploy*` field is modified, OR any file containing `changeset publish`, `npm publish`, `pnpm publish`, `gh release create`, `vercel deploy`, or `vercel --prod`.
+- `<HAS_WORKFLOWS>` — true if any changed file matches `.github/workflows/**`, `.github/actions/**`, or `turbo.json`. Fires `ci-security`.
+- `<HAS_RELEASE>` — true if any changed file matches `.changeset/**`, `vercel.json`, OR any `package.json` whose `scripts.*publish*` / `scripts.*release*` / `scripts.*deploy*` field is modified, OR any file containing `changeset publish`, `npm publish`, `pnpm publish`, `gh release create`, `vercel deploy`, or `vercel --prod`. Fires `release-integrity`.
+- `<HAS_DEPS>` — true if any changed file matches `pnpm-lock.yaml`, `package-lock.json`, `yarn.lock`, `pnpm-workspace.yaml`, or `.npmrc` (any level). Fires `dependencies`.
+- `<HAS_CI_RELEASE>` — derived flag, true iff `<HAS_WORKFLOWS>` OR `<HAS_RELEASE>` OR `<HAS_DEPS>`. Preserved for backward compatibility with `pr-fix/SKILL.md` and `tib-ship/SKILL.md` which still consume the parent flag for severity bumping / rubric loading.
 - `<HAS_AI_SDK>` — true if any changed file imports `ai`, `@ai-sdk/*`, `@vercel/ai`, OR uses any of `streamText`, `generateText`, `streamObject`, `generateObject`, `embed`, `embedMany`, `useChat`, `useCompletion`, `useObject`, `ToolLoopAgent`, OR imports `ai-elements` or `streamdown`.
 - `<HAS_ROUTE_UI>` — true if any changed file is **route-reachable**, i.e. a page/layout/api-route/SPA entry. Intentionally narrower than `<HAS_REACT>` so we don't boot a dev server for arbitrary component or utility changes. Matches:
   - **Next App Router:** `app/**/page.{tsx,jsx,ts,js}`, `app/**/layout.{tsx,jsx,ts,js}`, `app/**/template.{tsx,jsx}`, `app/**/loading.{tsx,jsx}`, `app/**/error.{tsx,jsx}`, `app/**/route.{ts,js}` (API routes).
@@ -123,7 +126,9 @@ Conditional flags:
   React/Next:     <HAS_REACT>
   Tailwind:       <HAS_TAILWIND>
   Styling/a11y:   <HAS_STYLING>
-  CI/release:     <HAS_CI_RELEASE>
+  Workflows:      <HAS_WORKFLOWS>
+  Release:        <HAS_RELEASE>
+  Dependencies:   <HAS_DEPS>
   AI SDK:         <HAS_AI_SDK>
   Route-UI:       <HAS_ROUTE_UI>
 ```
@@ -154,24 +159,28 @@ Agent specs live in `${CLAUDE_PLUGIN_ROOT}/skills/pr-review-engine/agents/*.md`.
 
 ### Current agent inventory
 
-Baseline (always fire):
+Baseline (always fire, 6 agents):
 
 - `code-quality.md` — type discipline, code smells, naming, security primitives, cross-file impact.
 - `silent-failure-hunter.md` — swallowed errors, missing error states, dead code paths.
 - `documentation.md` — JSDoc on exports + Markdown doc accuracy + pointer/link integrity + (when project uses an agent system) bidirectional backlink consistency.
 - `test-coverage.md` — missing tests, plus layout enforcement (colocation `src/Foo.test.ts` next to `src/Foo.ts` where the project supports it, `*.integration.test.ts` naming for fork-bound tests).
-- `code-simplifier-performance.md` — unnecessary complexity, redundant logic, performance issues.
+- `simplification.md` — unnecessary complexity, redundant logic, dead branches, over-engineering.
+- `performance.md` — barrel imports, memory leaks, N+1, memoization correctness, hot-path allocations.
 
-Conditional (fire only when their trigger flag is true):
+Conditional (fire only when their trigger flag is true, 9 agents):
 
 - `web3-security.md` — fires when `<HAS_WEB3>` is true. Contract interactions, transaction params, permit flows, chainId validation.
-- `react-next-best-practices.md` — fires when `<HAS_REACT>` is true. Loads marketplace rubrics: `vercel-react-best-practices`, `vercel-composition-patterns`, `next-best-practices`, `next-cache-components`, `building-components`, and `vercel-react-native-skills` (only when React Native is detected).
-- `ui-styling-accessibility.md` — fires when `<HAS_TAILWIND>` OR `<HAS_STYLING>` is true. Loads `tailwind-design-system`, `web-design-guidelines`, `ai-elements`, `streamdown`, `building-components` as rubric when applicable.
-- `ci-release-security.md` — fires when `<HAS_CI_RELEASE>` is true. Workflow injection, action pinning, write-token hardening, lockfile drift, publish-flow integrity. Loads `github-actions-docs`, `turborepo`, `deploy-to-vercel`, `vercel-cli-with-tokens` as rubric.
-- `ai-sdk-best-practices.md` — fires when `<HAS_AI_SDK>` is true. Vercel AI SDK usage, streaming, tool calls, structured output, useChat/useCompletion. Loads `ai-sdk`, `ai-elements`, `streamdown` as rubric.
+- `react-next-best-practices.md` — fires when `<HAS_REACT>` is true. Loads marketplace rubrics (see `references/marketplace-rubrics.md`).
+- `styling.md` — fires when `<HAS_TAILWIND>` OR `<HAS_STYLING>` is true. Tailwind/tokens, styling-architecture consistency.
+- `accessibility.md` — fires when `<HAS_TAILWIND>` OR `<HAS_STYLING>` is true. ARIA, keyboard, focus, alt text.
+- `ci-security.md` — fires when `<HAS_WORKFLOWS>` is true. Workflow injection, action pinning, `permissions:` scopes, secret exposure.
+- `release-integrity.md` — fires when `<HAS_RELEASE>` is true. Publish flow, provenance, release-commit signing, Changesets wiring.
+- `dependencies.md` — fires when `<HAS_DEPS>` is true. Lockfile drift, dependency hygiene, `.npmrc`, typosquats.
+- `ai-sdk-best-practices.md` — fires when `<HAS_AI_SDK>` is true. Vercel AI SDK usage, streaming, tool calls, structured output.
 - `runtime-validation.md` — fires when `<HAS_ROUTE_UI>` is true. Runs a browser via `agent-browser` / `mcp__claude-in-chrome__*` against the dev server: boots, navigates the changed routes, captures console errors / network 4xx-5xx / screenshots. Excluded by `/local:tib-ship` from its iteration loop and run once after static convergence so dev-server boot is paid 1×, not N×.
 
-The dispatcher does not hardcode names — it discovers via `find`. The list above documents what currently exists; persona refinement (splits and renames) is tracked in TIP-2026-05-20-persona-refinement and lands in a follow-up PR.
+The dispatcher does not hardcode names — it discovers via `find`. Total: 15 agents (6 baseline + 9 conditional).
 
 Adding a new agent = drop a new file under `${CLAUDE_PLUGIN_ROOT}/skills/pr-review-engine/agents/` with appropriate frontmatter. If conditional, also extend Step 4's flag detection. No edit to caller skill files needed.
 

@@ -117,10 +117,12 @@ setup() {
   [ "$status" -ne 0 ]
 }
 
-@test "agent inventory is exactly 11 files" {
-  # Updated to 15 after persona refinement (TIP-D). Currently 11 — migrated 1:1 from personas/.
+@test "agent inventory is exactly 15 files" {
+  # 6 baseline + 9 conditional. Three combos (ci-release-security,
+  # ui-styling-accessibility, code-simplifier-performance) split per
+  # TIP-2026-05-20-persona-refinement: 11 - 3 + 7 = 15.
   count=$(find "$AGENTS_DIR" -maxdepth 1 -name '*.md' -type f | wc -l | tr -d ' ')
-  [ "$count" = "11" ]
+  [ "$count" = "15" ]
 }
 
 @test "hooks.json and install-prereqs.sh exist and are wired up" {

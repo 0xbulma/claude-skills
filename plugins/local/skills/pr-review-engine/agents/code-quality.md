@@ -12,7 +12,7 @@ out-of-scope:
   - Mechanical style (formatter, organize-imports, indent) — see the project's lint contract; this persona owns *type* discipline not *style*.
   - JSDoc / TSDoc shape on exported symbols — see documentation.
   - Web3-specific concerns (calldata, permits, chainId, contract addresses) — see web3-security.
-  - CI / publish-flow / lockfile concerns — see ci-release-security.
+  - CI / publish-flow / lockfile concerns — see ci-security, release-integrity, dependencies.
 focus: Type safety inside function bodies, code smells, early returns, naming, magic numbers, complexity, security primitives at the code level (hardcoded secrets, injection, eval).
 ---
 
@@ -74,5 +74,5 @@ Code-level correctness inside the function bodies the diff touches. The authorit
 - Do NOT review mechanical formatter / linter style — defer to the project's lint contract.
 - Do NOT review JSDoc / TSDoc shape on exported symbols — `documentation`.
 - Do NOT review Web3-specific patterns — `web3-security`.
-- Do NOT review CI / publish-flow / lockfile concerns — `ci-release-security`.
+- Do NOT review CI / publish-flow / lockfile concerns — `ci-security`, `release-integrity`, `dependencies`.
 - Reference the project's spec (root and per-package `AGENTS.md` / `CLAUDE.md`, `MISSION.md`, `CONTRIBUTING.md`) when present in `<PROJECT_CONTEXT>`.

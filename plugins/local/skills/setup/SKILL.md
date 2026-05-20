@@ -26,16 +26,16 @@ A `SessionStart` hook also runs this in the background on every Claude Code sess
 | `vercel-react-native-skills` | `vercel-labs/agent-skills` | `react-next-best-practices` (only when RN code touched) |
 | `next-best-practices` | `vercel-labs/next-skills` | `react-next-best-practices` |
 | `next-cache-components` | `vercel-labs/next-skills` | `react-next-best-practices` |
-| `building-components` | `vercel/components.build` | `react-next-best-practices` + `ui-styling-accessibility` |
-| `web-design-guidelines` | `vercel-labs/agent-skills` | `ui-styling-accessibility` |
-| `tailwind-design-system` | `wshobson/agents` | `ui-styling-accessibility` |
-| `ai-elements` | `vercel/ai-elements` | `ai-sdk-best-practices` + `ui-styling-accessibility` |
-| `streamdown` | `vercel/streamdown` | `ai-sdk-best-practices` + `ui-styling-accessibility` |
+| `building-components` | `vercel/components.build` | `react-next-best-practices`, `styling`, `accessibility` |
+| `web-design-guidelines` | `vercel-labs/agent-skills` | `styling`, `accessibility` |
+| `tailwind-design-system` | `wshobson/agents` | `styling`, `accessibility` |
+| `ai-elements` | `vercel/ai-elements` | `ai-sdk-best-practices`, `styling` |
+| `streamdown` | `vercel/streamdown` | `ai-sdk-best-practices`, `styling` |
 | `ai-sdk` | `vercel/ai` | `ai-sdk-best-practices` |
-| `turborepo` | `vercel/turborepo` | `ci-release-security` (when turbo.json touched) |
-| `deploy-to-vercel` | `vercel-labs/agent-skills` | `ci-release-security` (when vercel.json / deploy touched) |
-| `vercel-cli-with-tokens` | `vercel-labs/agent-skills` | `ci-release-security` (when vercel CLI touched) |
-| `github-actions-docs` | `xixu-me/skills` | `ci-release-security` |
+| `turborepo` | `vercel/turborepo` | `ci-security` (when turbo.json touched) |
+| `deploy-to-vercel` | `vercel-labs/agent-skills` | `release-integrity` (when vercel.json / deploy touched) |
+| `vercel-cli-with-tokens` | `vercel-labs/agent-skills` | `release-integrity` (when vercel CLI touched) |
+| `github-actions-docs` | `xixu-me/skills` | `ci-security` |
 | `agent-browser` | `vercel-labs/agent-browser` | utility (browser automation, not a review rubric) |
 | `find-skills` | `vercel-labs/skills` | utility (skill discovery) |
 | `before-and-after` | `vercel-labs/before-and-after` | utility (visual diff screenshots) |

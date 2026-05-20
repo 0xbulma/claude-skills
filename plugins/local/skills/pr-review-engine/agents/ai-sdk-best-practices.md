@@ -9,8 +9,8 @@ applies: |
 out-of-scope:
   - General React/Next patterns (Server Components, hooks, effects) — see react-next-best-practices.
   - General code quality / type safety — see code-quality.
-  - Chat UI styling / a11y — see ui-styling-accessibility.
-  - CI/release of AI-powered code — see ci-release-security.
+  - Chat UI styling / a11y — see styling, accessibility.
+  - CI/release of AI-powered code — see ci-security, release-integrity, dependencies.
 focus: |
   Vercel AI SDK usage — generateText / streamText / streamObject / generateObject,
   tool calling, structured output (Zod schemas), provider configuration,
@@ -100,6 +100,6 @@ For each non-empty path, Read the rubric in full and print `Loaded conditional s
 ## Out-of-scope reminders (for the sub-agent)
 
 - Do NOT review generic React patterns (hooks, effects, Server Components) — `react-next-best-practices`.
-- Do NOT review Tailwind / a11y on chat UI — `ui-styling-accessibility`.
-- Do NOT review provider package version bumps in `package.json` — `ci-release-security` covers dep hygiene.
+- Do NOT review Tailwind / a11y on chat UI — `styling`, `accessibility`.
+- Do NOT review provider package version bumps in `package.json` — `ci-security`, `release-integrity`, `dependencies` covers dep hygiene.
 - Do NOT propose new providers or refactors of the AI architecture — out of PR scope.

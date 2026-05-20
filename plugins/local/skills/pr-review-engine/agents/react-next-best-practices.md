@@ -9,7 +9,7 @@ applies: |
 out-of-scope:
   - General type-safety / code smells — see code-quality.
   - Error-handling depth — see silent-failure-hunter.
-  - Tailwind class consistency / accessibility — see ui-styling-accessibility.
+  - Tailwind class consistency / accessibility — see styling, accessibility.
   - Test coverage for React components — see test-coverage.
 focus: React / Next.js patterns — Server Components, `'use client'` discipline, hooks, effects, composition, React 19 APIs.
 canonical-rules: |
@@ -88,6 +88,6 @@ Use the contents of whichever rubric files loaded — plus this persona's built-
 ## Out-of-scope reminders (for the sub-agent)
 
 - Do NOT review generic type-safety or `any` usage — `code-quality`.
-- Do NOT review Tailwind classes, design tokens, or accessibility — `ui-styling-accessibility`.
+- Do NOT review Tailwind classes, design tokens, or accessibility — `styling`, `accessibility`.
 - Do NOT flag missing tests for React components — `test-coverage`.
 - Do NOT review error-handling depth in async hooks (missing `.catch()` etc.) — `silent-failure-hunter`.

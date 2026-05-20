@@ -2,7 +2,7 @@
 
 Ten user-invokable slash-command skills + one engine skill (`pr-review-engine`, invoked by other skills, not directly).
 
-**PR navigation / review / fix** (review side delegates to the shared `pr-review-engine` skill + its 11-agent library)
+**PR navigation / review / fix** (review side delegates to the shared `pr-review-engine` skill + its 15-agent library)
 
 - **`/local:pr-switch <pr-url-or-num>`** — switch the local checkout to a PR's head branch. Accepts a full GitHub PR URL, `owner/repo#num` shorthand, or a bare number. Refuses cross-repo URLs; resolves a dirty tree interactively (stash/commit/discard/abort).
 - **`/local:pr-review-local`** — pre-PR review on the local branch (committed + uncommitted). Terminal-only output. `--fix` applies mechanical fixes.
