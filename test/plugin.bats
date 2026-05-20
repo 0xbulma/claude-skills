@@ -13,8 +13,8 @@ setup() {
   PLUGIN_DIR="$REPO_ROOT/plugins/local"
   PLUGIN_MANIFEST="$PLUGIN_DIR/.claude-plugin/plugin.json"
   SKILLS_DIR="$PLUGIN_DIR/skills"
-  PERSONAS_DIR="$PLUGIN_DIR/personas"
-  SKILLS_ALL="pr-fix pr-review-gh pr-review-local setup pr-create extract-plan tib-create pr-switch tip-create tib-ship"
+  AGENTS_DIR="$SKILLS_DIR/pr-review-engine/agents"
+  SKILLS_ALL="pr-fix pr-review-gh pr-review-local setup pr-create extract-plan tib-create pr-switch tip-create tib-ship pr-review-engine"
 }
 
 @test "marketplace.json is valid JSON" {
@@ -37,7 +37,7 @@ setup() {
   [ "$status" -eq 0 ]
 }
 
-@test "ten skills exist at expected paths" {
+@test "eleven skills exist at expected paths" {
   for skill in $SKILLS_ALL; do
     [ -f "$SKILLS_DIR/$skill/SKILL.md" ] || { echo "missing $SKILLS_DIR/$skill/SKILL.md" >&2; return 1; }
   done
@@ -67,10 +67,10 @@ setup() {
   done
 }
 
-@test "each persona has a semver version" {
-  for persona_file in "$PERSONAS_DIR"/*.md; do
-    version=$(awk '/^---$/{f=!f; next} f && /^version:/{print $2; exit}' "$persona_file")
-    [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]] || { echo "$persona_file version=$version is not semver" >&2; return 1; }
+@test "each agent has a semver version" {
+  for agent_file in "$AGENTS_DIR"/*.md; do
+    version=$(awk '/^---$/{f=!f; next} f && /^version:/{print $2; exit}' "$agent_file")
+    [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]] || { echo "$agent_file version=$version is not semver" >&2; return 1; }
   done
 }
 
@@ -103,22 +103,23 @@ setup() {
   [ "$status" -ne 0 ]
 }
 
-@test "no leaked ~/.claude/skills/ hardcoded paths in personas + lib + skills" {
+@test "no leaked ~/.claude/skills/ hardcoded paths in agents + skills" {
   # Hardcoded ~/.claude/skills/<name>/SKILL.md was the old standalone-install pattern.
   # Plugin layout discovers paths via Bash `find` — see CLAUDE.md.
   # bin/install-prereqs.sh and skills/setup/SKILL.md legitimately reference this path
   # because that's exactly where `npx skills add` installs to.
   run grep -rn '~/\.claude/skills/' \
-    "$PLUGIN_DIR/personas" \
-    "$PLUGIN_DIR/lib" \
-    "$PLUGIN_DIR/skills/pr-fix" \
-    "$PLUGIN_DIR/skills/pr-review-gh" \
-    "$PLUGIN_DIR/skills/pr-review-local"
+    "$AGENTS_DIR" \
+    "$SKILLS_DIR/pr-review-engine/SKILL.md" \
+    "$SKILLS_DIR/pr-fix" \
+    "$SKILLS_DIR/pr-review-gh" \
+    "$SKILLS_DIR/pr-review-local"
   [ "$status" -ne 0 ]
 }
 
-@test "persona inventory is exactly 11 files" {
-  count=$(find "$PERSONAS_DIR" -maxdepth 1 -name '*.md' -type f | wc -l | tr -d ' ')
+@test "agent inventory is exactly 11 files" {
+  # Updated to 15 after persona refinement (TIP-D). Currently 11 — migrated 1:1 from personas/.
+  count=$(find "$AGENTS_DIR" -maxdepth 1 -name '*.md' -type f | wc -l | tr -d ' ')
   [ "$count" = "11" ]
 }
 
