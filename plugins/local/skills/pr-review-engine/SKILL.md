@@ -43,13 +43,23 @@ MERGE_BASE=$(git merge-base origin/<BASE_BRANCH> <HEAD_REF>)
 
 git diff $MERGE_BASE..<HEAD_REF>
 git diff --name-only $MERGE_BASE..<HEAD_REF>
+
+# Build the per-file changed-lines map. Used by Step 6 to drop findings whose
+# cited line lies far outside any line the diff actually touched. Parse the
+# unified=0 hunk headers `@@ -X,Y +A,B @@` — each header announces a block
+# starting at line A in the new file with B added/modified lines. When B is
+# omitted, treat it as 1.
+git diff --unified=0 $MERGE_BASE..<HEAD_REF>
 ```
+
+Build `<CHANGED_LINES>` as a map `{ "<file-path>": <sorted-int-set> }` from those hunk headers. For each `@@ -OLD,OLD_COUNT +NEW,NEW_COUNT @@` header that follows a `+++ b/<file>` line, add `{NEW, NEW+1, ..., NEW+NEW_COUNT-1}` to that file's set. Pure-rename hunks (NEW_COUNT == 0) contribute no entries.
 
 If `<DIFF_SOURCE>=local` AND uncommitted changes exist, also include them:
 
 ```bash
 git diff HEAD                  # combined staged + unstaged
 git diff --name-only HEAD
+git diff --unified=0 HEAD      # extend <CHANGED_LINES> with uncommitted hunks
 ```
 
 Combine the two file lists, deduplicate, announce the count of uncommitted files included so the user knows the review covers their full work-in-progress:
@@ -151,13 +161,47 @@ Agent specs live in `${CLAUDE_PLUGIN_ROOT}/skills/pr-review-engine/agents/*.md`.
 
 ### Shared per-agent contract (applied uniformly to every launched agent)
 
-- Each agent receives: full diff, full content of changed files (read from local FS), `<PROJECT_CONTEXT>` from Step 4, the conditional flag values, the agent file body, the repo path / branches.
+- Each agent receives: full diff, full content of changed files (read from local FS), `<PROJECT_CONTEXT>` from Step 4, the conditional flag values, `<CHANGED_LINES>` (per-file set of line numbers the diff added or modified), the agent file body, the repo path / branches.
 - Per-package `AGENTS.md` rules refine the root for the specific package; the root wins on contradictions.
 - Agents must analyze the **full diff**, not just the latest commit.
-- Each agent **must return** a JSON array `[{severity: "critical"|"high"|"medium"|"low", file: "path", line: number, description: "what is wrong + how to fix"}]` OR an explicit error sentinel `{"agent_error": "<reason>"}` if it could not complete (the aggregator in Step 6 distinguishes "no findings" from "agent failed").
+- Each agent **must return** a JSON array `[{severity: "critical"|"high"|"medium"|"low", file: "path", line: number, description: "WHAT: ... FIX: ..."}]` OR an explicit error sentinel `{"agent_error": "<reason>"}` if it could not complete (the aggregator in Step 6 distinguishes "no findings" from "agent failed").
+- **`description` schema.** Every finding's `description` MUST contain both a `WHAT:` clause naming the specific problem AND a `FIX:` clause stating the specific change. Recommended format: `WHAT: <one sentence>. FIX: <one sentence>.` Free-form prose otherwise. Findings without both clauses are rejected as malformed in Step 6 sub-step 2.
+- **`line` schema.** `line` must be a positive integer pointing at a line inside `<CHANGED_LINES>` for the cited `file`, OR within ±15 lines of one (the "adjacent code" tolerance window). Findings outside the window are dropped in Step 6 sub-step 1 as pre-existing.
 - **Stay in scope (avoid scope creep).** Focus on the diff: flag issues introduced by these changes, and issues in adjacent code only when the diff makes that adjacent code materially worse (e.g. a renamed function whose remaining callers now misbehave, a new code path that exposes an existing bug). Do NOT flag pre-existing issues in unchanged lines of changed files, propose unrelated refactors, suggest new features or abstractions, or recommend cleanups outside the PR's intent. When in doubt, omit — the reviewer is reviewing *this change*, not the file's history.
 - **Don't nitpick.** Polish, wording, naming preferences, stylistic alternatives, and "you could also" suggestions are not findings — omit them regardless of severity label. A Low-severity finding belongs in the output only when a reasonable reviewer would clearly act on it in this PR.
 - Only **actionable** findings — no praise, no summaries.
+
+#### Calibration examples (apply to every agent)
+
+A finding that would be **kept** (good shape):
+
+```json
+{
+  "severity": "high",
+  "file": "src/components/SearchBox.tsx",
+  "line": 42,
+  "description": "WHAT: useEffect adds a `window.addEventListener('resize', ...)` but the cleanup function does not call `removeEventListener` with the same handler reference — the listener accumulates on every re-render and leaks. FIX: capture the handler in a variable inside the effect, return `() => window.removeEventListener('resize', handler)` from the effect."
+}
+```
+
+This is kept because the `WHAT` clause names a specific problem at a specific line, the `FIX` clause is a concrete code change, the severity matches the agent's `severity-guidance:` (memory leak in a long-lived component → high), and the cited line is inside `<CHANGED_LINES>`.
+
+A finding that would be **dropped** in Step 6 (bad shape):
+
+```json
+{
+  "severity": "medium",
+  "file": "src/components/SearchBox.tsx",
+  "line": 42,
+  "description": "Consider extracting this into a helper for readability."
+}
+```
+
+This is dropped because: no `WHAT:` clause naming the specific problem, no `FIX:` clause stating the specific change, and the underlying suggestion is a stylistic preference ("for readability") — a textbook nitpick the master scope-guard prohibits. Producing findings like this wastes the human reviewer's attention and pushes them toward auto-dismissing the agent's output.
+
+#### A note on schema strictness
+
+The `WHAT:` and `FIX:` markers are literal — Step 6 grep-matches them. The discipline they enforce isn't bureaucratic; it's the difference between "an actionable bug report a junior engineer can fix" and "a vague suggestion that needs interpretation before it becomes work." If a finding genuinely doesn't fit the WHAT/FIX shape, the underlying observation probably isn't actionable enough to ship — withhold it.
 
 ### Current agent inventory
 
@@ -202,17 +246,36 @@ Merge all agent results into a single list:
 
    If `finding.file` is not in `<CHANGED_FILES>`, **drop the finding** and increment `<DROPPED_OUT_OF_SCOPE>`.
 
-   Do NOT filter by line number within a changed file. The Step 5 contract permits flagging adjacent code in a changed file when the diff materially worsens it, so line-level filtering would discard legitimate findings.
+   **Line-level scope filter (in-file).** For findings whose `file` IS in `<CHANGED_FILES>`, check `finding.line` against the file's `<CHANGED_LINES>` set built in Step 3:
+   - If `finding.line` is in the set → keep.
+   - If `finding.line` is outside the set but within ±15 lines of any changed line → keep (the "adjacent code" tolerance: a renamed function's remaining callers, a new code path that exposes an existing bug). The window is deliberately generous to preserve legitimate adjacent findings; agents are not penalized for pointing at the surrounding block.
+   - Otherwise → **drop** and increment `<DROPPED_PRE_EXISTING>`. The finding's line is too far from any diff hunk to plausibly have been introduced by this change.
 
-   After the loop, print one log line: `Scope filter: dropped <DROPPED_OUT_OF_SCOPE> finding(s) targeting files outside the diff.` Then proceed to the remaining sub-steps on the surviving findings.
+   Pure-rename hunks have empty `<CHANGED_LINES>` sets; on a rename-only diff, line-level filtering is a no-op (file-level filter already caught what it could). Documented as a known limitation: a rename-only diff cannot use line-level filtering and falls back to file-level only.
 
-   Note: dropped findings do NOT count toward `<FAILED_AGENTS>` — they are valid output that was simply out of scope, not malformed.
+   **Markdown documentation-example filter.** For findings whose `file` ends in `.md` AND whose `description` matches one of the secret/injection FP-suspect patterns (case-insensitive: `secret`, `API key`, `token`, `password`, `_authToken`, `eval(`, `dangerouslySetInnerHTML`, `private key`, `mnemonic`), check whether the cited line falls inside a fenced code block:
+   - Read the file. Walk lines `1..finding.line` and count ` ``` ` markers.
+   - If the count is odd, `finding.line` is inside a fenced block → likely a documentation example, not a real defect.
+   - Drop the finding and increment `<DROPPED_DOC_EXAMPLE>`.
+
+   This catches the common false positive where an agent flags `OPENAI_API_KEY` or `_authToken=...` inside a code-fence example showing what NOT to do. The filter is deliberately narrow: only `.md` files, only descriptions matching the FP pattern list, only inside fenced blocks. A real hardcoded secret in a `.md` outside a code fence (rare but possible) is preserved.
+
+   After all three sub-filters, print one log line per counter that is non-zero:
+   `Scope filter: dropped <DROPPED_OUT_OF_SCOPE> file-level + <DROPPED_PRE_EXISTING> line-level + <DROPPED_DOC_EXAMPLE> doc-example finding(s).`
+
+   Note: dropped findings do NOT count toward `<FAILED_AGENTS>` — they are valid output that was simply out of scope, not malformed. They flow to the caller as a collapsible `Dropped by scope filter (N)` section in the final report so the user can audit the filter's decisions and pull a finding back in if the filter was wrong.
 
 2. **Count agent failures.** An agent counts as failed if any of these hold:
    - Returned `{"agent_error": "..."}` (the explicit sentinel from Step 5).
    - Returned text that is not parseable as JSON.
    - Returned a JSON value that is not an array (e.g. an object that is not the error sentinel).
-   - Returned an array containing one or more objects missing required fields (`severity` not in `critical`/`high`/`medium`/`low`, missing or non-string `file`, missing or non-numeric `line`, missing or empty `description`) — count the agent as **partially failed**: keep the valid findings from that agent, but include the agent in `<FAILED_AGENTS>` so the report flags it.
+   - Returned an array containing one or more objects missing required fields:
+     - `severity` not in `critical`/`high`/`medium`/`low`
+     - missing or non-string `file`
+     - missing or non-positive-integer `line`
+     - missing or empty `description`
+     - `description` lacks a `WHAT:` substring OR lacks a `FIX:` substring (per the Step 5 schema)
+     Count the agent as **partially failed**: keep the valid findings from that agent, but include the agent in `<FAILED_AGENTS>` so the report flags it.
 
    Track `<FAILED_AGENTS>` as a count plus the names. This count flows into the caller's Step 7 reporting so a "no findings" verdict is never reported when some agents crashed.
 
@@ -235,8 +298,10 @@ Severity labels (used everywhere downstream):
 The caller (Step 7 of `/local:pr-review-gh` / `/local:pr-review-local` / `/local:pr-fix` / `/local:tib-ship`) consumes:
 
 - `<FINDINGS>` — sorted, deduplicated array of `{severity, file, line, description}`.
-- `<FAILED_AGENTS>` — count + names of agents that returned `agent_error` or malformed output.
-- `<COUNTS>` — `{critical, high, medium, low}` totals.
+- `<DROPPED_FINDINGS>` — findings that the scope filter dropped, each tagged with the drop reason (`file-out-of-scope` / `line-pre-existing` / `doc-example-fp`). Surfaced to the caller as a collapsible audit section, not a silent nuke.
+- `<FAILED_AGENTS>` — count + names of agents that returned `agent_error` or malformed output (including findings that failed the WHAT/FIX schema check).
+- `<COUNTS>` — `{critical, high, medium, low}` totals on the kept findings.
+- `<DROPPED_COUNTS>` — `{file_out_of_scope, line_pre_existing, doc_example}` totals on the dropped findings.
 - `<TOTAL_AGENTS_LAUNCHED>` — count of baseline + fired conditional agents, minus mode-filtered (when `<MODE>=fix`), minus the caller's `<EXCLUDE_AGENTS>` list. Used by the caller's report to phrase `<FAILED_AGENTS> of <TOTAL_AGENTS_LAUNCHED> agents failed`.
 
-The caller formats and routes these per its mode (GitHub COMMENT / terminal output / fix application).
+The caller formats and routes these per its mode (GitHub COMMENT / terminal output / fix application). The collapsible dropped-findings section is the user's audit trail for the filters — if the line-level filter wrongly drops a legitimate adjacent-code finding, the user can pull it back in.

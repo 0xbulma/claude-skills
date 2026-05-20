@@ -177,6 +177,20 @@ setup() {
   done
 }
 
+@test "engine SKILL.md documents the scope-filter contract" {
+  # The Step 6 sub-step 1 contract names three drop categories and the
+  # <CHANGED_LINES> tolerance window. Locks these in so a future edit
+  # that removes one of the structural filters fails the test.
+  engine="$SKILLS_DIR/pr-review-engine/SKILL.md"
+  grep -q '<CHANGED_LINES>' "$engine"        || { echo "engine missing <CHANGED_LINES> contract" >&2; return 1; }
+  grep -q 'DROPPED_OUT_OF_SCOPE' "$engine"   || { echo "engine missing DROPPED_OUT_OF_SCOPE counter" >&2; return 1; }
+  grep -q 'DROPPED_PRE_EXISTING' "$engine"   || { echo "engine missing DROPPED_PRE_EXISTING counter" >&2; return 1; }
+  grep -q 'DROPPED_DOC_EXAMPLE' "$engine"    || { echo "engine missing DROPPED_DOC_EXAMPLE counter" >&2; return 1; }
+  grep -q 'WHAT:'  "$engine"                 || { echo "engine missing WHAT: schema marker" >&2; return 1; }
+  grep -q 'FIX:'   "$engine"                 || { echo "engine missing FIX: schema marker" >&2; return 1; }
+  grep -q '±15'    "$engine"                 || { echo "engine missing the ±15 adjacent-code tolerance window" >&2; return 1; }
+}
+
 @test "every references/*.md pointer in agents resolves to a real file" {
   REFS_DIR="$SKILLS_DIR/pr-review-engine/references"
   # Every "Cross-check `references/X.md`" pointer in an agent body must
