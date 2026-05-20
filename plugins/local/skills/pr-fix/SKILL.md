@@ -404,15 +404,15 @@ For each file with findings, build a complete understanding:
 
    - **Web3** (`<HAS_WEB3>` is true and file imports a contract-interaction library — `viem`, `wagmi`, `ethers`, or a project-specific web3 SDK — or contains contract addresses/calldata):
      - Re-read the Web3 portion of `<PROJECT_CONTEXT>` plus any `SECURITY.md` / `audits/*.md` discovered.
-     - Use `${CLAUDE_PLUGIN_ROOT}/personas/web3-security.md` as the rubric for the confidence gate.
+     - Use `${CLAUDE_PLUGIN_ROOT}/skills/pr-review-engine/agents/web3-security.md` as the rubric for the confidence gate.
 
    - **CI / release files** (fix touches `.github/workflows/**`, `.github/actions/**`, `.changeset/**`, `pnpm-lock.yaml` / `package-lock.json` / `yarn.lock`, `pnpm-workspace.yaml`, `.npmrc`, or a `package.json` `scripts.*publish*` / `scripts.*release*` field):
      - If the target repo defines its own CI/release rules (look for a `Review automation` / `CI/release security` / `Release` section in the root `AGENTS.md` / `CLAUDE.md`, or a dedicated `docs/security/` / `SECURITY.md`), read that section first — it is authoritative.
-     - Otherwise (or in addition) use `${CLAUDE_PLUGIN_ROOT}/personas/ci-release-security.md` as the rubric: workflow injection, action pinning, write-token hardening, lockfile drift, publish-flow integrity, `.npmrc` hygiene.
+     - Otherwise (or in addition) use `${CLAUDE_PLUGIN_ROOT}/skills/pr-review-engine/agents/ci-release-security.md` as the rubric: workflow injection, action pinning, write-token hardening, lockfile drift, publish-flow integrity, `.npmrc` hygiene.
 
    - **Persona / spec-layering files** (fix touches `AGENTS.md` / `CLAUDE.md` itself, or any file under `.agents/personas/` / `.claude/agents/` / similar):
      - If the target repo uses a persona system (look for `.agents/personas/` or `.claude/agents/` and any `> Applied by personas: …` callouts in the spec), the bidirectional-backlink invariant applies: changes to a persona's `applies:` frontmatter must atomically update the corresponding callout in the spec, and vice versa. A one-sided fix is incomplete.
-     - Use `${CLAUDE_PLUGIN_ROOT}/personas/documentation.md` (sections 3–4) as the rubric.
+     - Use `${CLAUDE_PLUGIN_ROOT}/skills/pr-review-engine/agents/documentation.md` (sections 3–4) as the rubric.
 
    These rubrics inform the confidence gate. Example: a comment saying "wrap this in `useMemo`" on code inside a Server Component is a HIGH→LOW confidence drop because the vercel-react-best-practices rubric flags `useMemo` as not applicable in Server Components — skip the fix and reply explaining why.
 

@@ -6,7 +6,7 @@ description: Pre-PR local code review. Reviews local branch changes (committed +
 
 # review-local — Pre-PR Local Review
 
-Reviews local branch changes using parallel specialized agents from `${CLAUDE_PLUGIN_ROOT}/lib/pr-review-base.md` and outputs findings directly in the terminal. Zero GitHub interaction. Optionally applies fixes with `--fix`.
+Reviews local branch changes using parallel specialized agents from `${CLAUDE_PLUGIN_ROOT}/skills/pr-review-engine/SKILL.md` and outputs findings directly in the terminal. Zero GitHub interaction. Optionally applies fixes with `--fix`.
 
 ## Usage
 
@@ -98,7 +98,7 @@ fi
 
 ## Steps 3–6: Shared review base
 
-**Read `${CLAUDE_PLUGIN_ROOT}/lib/pr-review-base.md` and follow Steps 3–6 there**, with:
+**Read `${CLAUDE_PLUGIN_ROOT}/skills/pr-review-engine/SKILL.md` and follow Steps 3–6 there**, with:
 
 - `<DIFF_SOURCE>` = `local` (include uncommitted diff)
 - `<HEAD_REF>` = `HEAD`

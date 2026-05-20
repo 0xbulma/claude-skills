@@ -6,7 +6,7 @@ description: Local PR review bot. Reviews an open pull request with parallel spe
 
 # review-gh — Local PR Review (post to GitHub)
 
-Reviews a GitHub Pull Request locally using parallel specialized agents from `${CLAUDE_PLUGIN_ROOT}/lib/pr-review-base.md`, posts findings as inline review comments with `event="COMMENT"`. Never auto-approves or requests changes — leaves the verdict to humans. Optionally schedules a 2-minute watcher cron via `--watch`.
+Reviews a GitHub Pull Request locally using parallel specialized agents from `${CLAUDE_PLUGIN_ROOT}/skills/pr-review-engine/SKILL.md`, posts findings as inline review comments with `event="COMMENT"`. Never auto-approves or requests changes — leaves the verdict to humans. Optionally schedules a 2-minute watcher cron via `--watch`.
 
 ## Usage
 
@@ -65,7 +65,7 @@ Extract `<BASE_BRANCH>`, `<HEAD_BRANCH>`, `<HEAD_SHA>`, `state`. Validate that a
 
 ## Steps 3–6: Shared review base
 
-**Read `${CLAUDE_PLUGIN_ROOT}/lib/pr-review-base.md` and follow Steps 3–6 there**, with these inputs:
+**Read `${CLAUDE_PLUGIN_ROOT}/skills/pr-review-engine/SKILL.md` and follow Steps 3–6 there**, with these inputs:
 
 - `<DIFF_SOURCE>` = `pr`
 - `<HEAD_REF>` = `origin/<HEAD_BRANCH>`
@@ -198,7 +198,7 @@ CYCLE START:
 4. NEW COMMIT DETECTED:
    Say "New commit detected on PR #<PR_NUMBER>: ${CYCLE_HEAD_SHA}. Running full review..."
 
-5. **Read `${CLAUDE_PLUGIN_ROOT}/lib/pr-review-base.md` and follow Steps 3–6 there**, with:
+5. **Read `${CLAUDE_PLUGIN_ROOT}/skills/pr-review-engine/SKILL.md` and follow Steps 3–6 there**, with:
    - <DIFF_SOURCE> = pr
    - <HEAD_REF> = origin/<HEAD_BRANCH>
    - <BASE_BRANCH> = <BASE_BRANCH>

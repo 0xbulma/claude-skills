@@ -73,7 +73,7 @@ First, sniff the project's commands once per TIP using the same logic as `tip-cr
 
 #### Load stack rubric (implementation parity with review)
 
-Before spawning an implementation sub-agent for a TIP, compute the same `<HAS_REACT>` / `<HAS_TAILWIND>` / `<HAS_STYLING>` / `<HAS_AI_SDK>` / `<HAS_WEB3>` / `<HAS_CI_RELEASE>` flags described in `lib/pr-review-base.md` Step 4 — but over the TIP's *declared* Files-to-Modify set (anticipated diff) rather than the actual diff. For every flag that's true, attach the corresponding marketplace skill bodies to the sub-agent's prompt so the implementation is written to the same rubric the review will then check against. Discovery is identical to the personas — run-time `find ~/.claude -type f -name SKILL.md -path "*<skill-name>*" 2>/dev/null | head -1` per skill:
+Before spawning an implementation sub-agent for a TIP, compute the same `<HAS_REACT>` / `<HAS_TAILWIND>` / `<HAS_STYLING>` / `<HAS_AI_SDK>` / `<HAS_WEB3>` / `<HAS_CI_RELEASE>` flags described in `skills/pr-review-engine/SKILL.md` Step 4 — but over the TIP's *declared* Files-to-Modify set (anticipated diff) rather than the actual diff. For every flag that's true, attach the corresponding marketplace skill bodies to the sub-agent's prompt so the implementation is written to the same rubric the review will then check against. Discovery is identical to the personas — run-time `find ~/.claude -type f -name SKILL.md -path "*<skill-name>*" 2>/dev/null | head -1` per skill:
 
 | Flag                                | Rubric skills to load                                                                  |
 | ----------------------------------- | -------------------------------------------------------------------------------------- |
@@ -136,7 +136,7 @@ After all phases for a TIP are green, set the TIP `Status` row from `Draft` to `
 
 For `i = 1..MAX_ITERS`:
 
-1. Run the equivalent of `/local:pr-review-local` (delegate to `lib/pr-review-base.md` with `<DIFF_SOURCE>=local` and `<EXCLUDE_PERSONAS>=["runtime-validation"]`). The exclusion prevents the dev server from booting once per iteration — Step 6 runs `runtime-validation` exactly once after the static loop converges. Do **not** pass `--fix`; we handle fixes ourselves so we can track convergence.
+1. Run the equivalent of `/local:pr-review-local` (delegate to `skills/pr-review-engine/SKILL.md` with `<DIFF_SOURCE>=local` and `<EXCLUDE_AGENTS>=["runtime-validation"]`). The exclusion prevents the dev server from booting once per iteration — Step 6 runs `runtime-validation` exactly once after the static loop converges. Do **not** pass `--fix`; we handle fixes ourselves so we can track convergence.
 2. Collect findings into a list. If empty → **break, success**.
 3. Compute a stable hash of the findings (sort by `file`, `line`, `description`; hash). If `hash == prev_findings_hash`:
    - Same findings as last iteration → **stuck**. Stop and ask the user (do not silently retry).
@@ -158,9 +158,9 @@ If `i == MAX_ITERS` and findings are still non-empty → **bail**. Print the res
 
 ### Step 6: Runtime validation (post-convergence, single shot)
 
-After Step 5 converges, compute `<HAS_ROUTE_UI>` (see `lib/pr-review-base.md` Step 4 — route/page/layout/api-route/SPA-entry change + repo has a dev-server script). If `<HAS_ROUTE_UI>` is true AND `--no-runtime` was not passed, fire the `runtime-validation` persona exactly once:
+After Step 5 converges, compute `<HAS_ROUTE_UI>` (see `skills/pr-review-engine/SKILL.md` Step 4 — route/page/layout/api-route/SPA-entry change + repo has a dev-server script). If `<HAS_ROUTE_UI>` is true AND `--no-runtime` was not passed, fire the `runtime-validation` persona exactly once:
 
-1. Read `${CLAUDE_PLUGIN_ROOT}/personas/runtime-validation.md`.
+1. Read `${CLAUDE_PLUGIN_ROOT}/skills/pr-review-engine/agents/runtime-validation.md`.
 2. Launch a single Agent (subagent_type: `general-purpose`) with the persona body as its prompt, the cumulative diff, the changed-files list, and the project's dev-server command.
 3. Consume the agent's findings (same JSON shape as the review personas).
 4. If any `critical` or `high` findings:
