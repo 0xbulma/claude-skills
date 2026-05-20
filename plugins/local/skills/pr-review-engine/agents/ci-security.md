@@ -101,3 +101,11 @@ changing `secrets:` plumbing across reusable workflows, or modifying
 which workflows fire on which events — surface those for human review.
 
 Cross-check `references/injection.md` and `references/secrets.md`.
+
+## Out-of-scope reminders (for the sub-agent)
+
+- Do NOT review release/publish flow or Changesets — `release-integrity`.
+- Do NOT review lockfile drift, `.npmrc`, or dependency hygiene — `dependencies`.
+- Do NOT review build-script code quality — `correctness`, `simplification`, `performance`.
+- Do NOT review test coverage of CI workflows — `tests`.
+- Do NOT propose architectural changes to the workflow set (which workflows fire on which events) — keep findings local to the diff.

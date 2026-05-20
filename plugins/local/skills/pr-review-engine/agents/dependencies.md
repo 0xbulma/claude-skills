@@ -73,3 +73,10 @@ or switching package managers — surface for human review.
 
 Cross-check `references/secrets.md` for `_authToken` and embedded
 credentials in registry URLs.
+
+## Out-of-scope reminders (for the sub-agent)
+
+- Do NOT review GitHub Actions workflow security — `ci-security`.
+- Do NOT review release/publish flow or Changesets — `release-integrity`.
+- Do NOT review build/test script code quality — `correctness`, `simplification`, `performance`.
+- Do NOT propose dependency-policy changes (add Dependabot, switch to Renovate) — keep findings local to the diff.

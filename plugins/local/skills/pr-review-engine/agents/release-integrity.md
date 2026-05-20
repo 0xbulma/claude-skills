@@ -97,3 +97,10 @@ Mechanical fixes only:
 changing tag scope between `next` and `latest`, or modifying
 `.changeset/config.json`'s fixed-version / linked / baseBranch fields —
 surface for human review.
+
+## Out-of-scope reminders (for the sub-agent)
+
+- Do NOT review GitHub Actions workflow injection / action pinning / `permissions:` scopes — `ci-security`.
+- Do NOT review lockfile drift or `.npmrc` hygiene — `dependencies`.
+- Do NOT review build-script code quality — `correctness`, `simplification`, `performance`.
+- Do NOT propose new release flows or restructure the publish topology — surface for human review instead.
