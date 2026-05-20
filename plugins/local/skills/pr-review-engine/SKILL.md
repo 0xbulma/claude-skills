@@ -29,7 +29,6 @@ deduplicated findings list + `<FAILED_AGENTS>` count produced by Step 6.
 | `<HEAD_SHA>` | `gh pr view` → `headRefOid` (PR mode) OR `git rev-parse HEAD` (Local) |
 | `<DIFF_SOURCE>` | `pr` (use `origin/<BASE>...origin/<HEAD>`) OR `local` (use `origin/<BASE>...HEAD` and overlay uncommitted) |
 | `<HEAD_REF>` | `origin/<HEAD_BRANCH>` for `<DIFF_SOURCE>=pr`, `HEAD` for `<DIFF_SOURCE>=local` |
-| `<MODE>` | `review` (default) — full review, all matching agents fire. `fix` — only agents whose body has a `## Fix rubric` section fire (used by `pr-fix`). `tib-validate` — full review with runtime-validation excluded from the inner loop (used by `tib-ship`). |
 | `<EXCLUDE_AGENTS>` | Optional list of agent names to skip in Step 5 (e.g. `["runtime-validation"]` from `tib-ship` during iterations). Defaults to empty. |
 
 ## Step 3: Get the diff locally
@@ -139,10 +138,9 @@ Agent specs live in `${CLAUDE_PLUGIN_ROOT}/skills/pr-review-engine/agents/*.md`.
 2. For each agent, decide whether to launch:
    - `kind: baseline` → always launch.
    - `kind: conditional` → launch only when the flag named in `trigger:` is true (see Step 4 for flag computation). Compound triggers like `<HAS_TAILWIND> OR <HAS_STYLING>` are evaluated as written.
-3. **Apply mode filter.** If `<MODE>=fix`, drop any agent whose body does NOT contain a `## Fix rubric` section. (Today this filters the agent set to `web3`, `ci-security`, `release-integrity`, `dependencies`, and `docs`.)
-4. **Apply the caller's exclusion list.** If the caller provided `<EXCLUDE_AGENTS>` (a list of agent names), drop those from the launch set. Used by orchestrators like `/local:tib-ship` to suppress an agent during inner iterations and run it once explicitly at the end (avoids paying dev-server boot N×, e.g. for `runtime-validation`).
-5. Launch ALL selected agents **in parallel** using the Agent tool (subagent_type: `"general-purpose"`).
-6. Track `<TOTAL_AGENTS_LAUNCHED>` = count of agents actually launched (baseline + any fired conditionals − excluded − mode-filtered).
+3. **Apply the caller's exclusion list.** If the caller provided `<EXCLUDE_AGENTS>` (a list of agent names), drop those from the launch set. Used by orchestrators like `/local:tib-ship` to suppress an agent during inner iterations and run it once explicitly at the end (avoids paying dev-server boot N×, e.g. for `runtime-validation`).
+4. Launch ALL selected agents **in parallel** using the Agent tool (subagent_type: `"general-purpose"`).
+5. Track `<TOTAL_AGENTS_LAUNCHED>` = count of agents actually launched (baseline + any fired conditionals − excluded).
 
 ### Shared per-agent contract (applied uniformly to every launched agent)
 
@@ -158,26 +156,22 @@ Agent specs live in `${CLAUDE_PLUGIN_ROOT}/skills/pr-review-engine/agents/*.md`.
 
 Baseline (always fire):
 
-- `correctness.md` — type discipline, code smells, naming, cross-file impact.
-- `error-handling.md` — swallowed errors, missing error states, dead code paths.
-- `docs.md` — JSDoc on exports + Markdown doc accuracy + pointer/link integrity + (when project uses an agent system) bidirectional backlink consistency.
-- `tests.md` — missing tests, plus layout enforcement (colocation `src/Foo.test.ts` next to `src/Foo.ts` where the project supports it, `*.integration.test.ts` naming for fork-bound tests).
-- `simplification.md` — unnecessary complexity, redundant logic, dead branches.
-- `performance.md` — barrel imports, memory leaks, N+1, memoization correctness.
+- `code-quality.md` — type discipline, code smells, naming, security primitives, cross-file impact.
+- `silent-failure-hunter.md` — swallowed errors, missing error states, dead code paths.
+- `documentation.md` — JSDoc on exports + Markdown doc accuracy + pointer/link integrity + (when project uses an agent system) bidirectional backlink consistency.
+- `test-coverage.md` — missing tests, plus layout enforcement (colocation `src/Foo.test.ts` next to `src/Foo.ts` where the project supports it, `*.integration.test.ts` naming for fork-bound tests).
+- `code-simplifier-performance.md` — unnecessary complexity, redundant logic, performance issues.
 
 Conditional (fire only when their trigger flag is true):
 
-- `web3.md` — fires when `<HAS_WEB3>` is true. Contract interactions, transaction params, permit flows, chainId validation. Has `## Fix rubric`.
-- `react-next.md` — fires when `<HAS_REACT>` is true. Loads marketplace rubrics via `references/marketplace-rubrics.md`.
-- `styling.md` — fires when `<HAS_TAILWIND>` OR `<HAS_STYLING>` is true. Tailwind/tokens.
-- `accessibility.md` — fires when `<HAS_TAILWIND>` OR `<HAS_STYLING>` is true. ARIA, keyboard, focus, alt.
-- `ci-security.md` — fires when `<HAS_CI_RELEASE>` AND workflow files changed. Has `## Fix rubric`.
-- `release-integrity.md` — fires when `<HAS_CI_RELEASE>` AND release/changeset files changed. Has `## Fix rubric`.
-- `dependencies.md` — fires when `<HAS_CI_RELEASE>` AND lockfile/`.npmrc` changed. Has `## Fix rubric`.
-- `ai-sdk.md` — fires when `<HAS_AI_SDK>` is true.
-- `runtime-validation.md` — fires when `<HAS_ROUTE_UI>` is true. Runs a browser. Excluded by `/local:tib-ship` from its iteration loop.
+- `web3-security.md` — fires when `<HAS_WEB3>` is true. Contract interactions, transaction params, permit flows, chainId validation.
+- `react-next-best-practices.md` — fires when `<HAS_REACT>` is true. Loads marketplace rubrics: `vercel-react-best-practices`, `vercel-composition-patterns`, `next-best-practices`, `next-cache-components`, `building-components`, and `vercel-react-native-skills` (only when React Native is detected).
+- `ui-styling-accessibility.md` — fires when `<HAS_TAILWIND>` OR `<HAS_STYLING>` is true. Loads `tailwind-design-system`, `web-design-guidelines`, `ai-elements`, `streamdown`, `building-components` as rubric when applicable.
+- `ci-release-security.md` — fires when `<HAS_CI_RELEASE>` is true. Workflow injection, action pinning, write-token hardening, lockfile drift, publish-flow integrity. Loads `github-actions-docs`, `turborepo`, `deploy-to-vercel`, `vercel-cli-with-tokens` as rubric.
+- `ai-sdk-best-practices.md` — fires when `<HAS_AI_SDK>` is true. Vercel AI SDK usage, streaming, tool calls, structured output, useChat/useCompletion. Loads `ai-sdk`, `ai-elements`, `streamdown` as rubric.
+- `runtime-validation.md` — fires when `<HAS_ROUTE_UI>` is true. Runs a browser via `agent-browser` / `mcp__claude-in-chrome__*` against the dev server: boots, navigates the changed routes, captures console errors / network 4xx-5xx / screenshots. Excluded by `/local:tib-ship` from its iteration loop and run once after static convergence so dev-server boot is paid 1×, not N×.
 
-Note: the agent inventory above is the **target post-refinement** state (see TIP-D). Until refinement lands, the engine walks whatever agent files exist in `agents/`. The dispatcher does not hardcode names — it discovers via `find`.
+The dispatcher does not hardcode names — it discovers via `find`. The list above documents what currently exists; persona refinement (splits and renames) is tracked in TIP-2026-05-20-persona-refinement and lands in a follow-up PR.
 
 Adding a new agent = drop a new file under `${CLAUDE_PLUGIN_ROOT}/skills/pr-review-engine/agents/` with appropriate frontmatter. If conditional, also extend Step 4's flag detection. No edit to caller skill files needed.
 
@@ -232,6 +226,6 @@ The caller (Step 7 of `/local:pr-review-gh` / `/local:pr-review-local` / `/local
 - `<FINDINGS>` — sorted, deduplicated array of `{severity, file, line, description}`.
 - `<FAILED_AGENTS>` — count + names of agents that returned `agent_error` or malformed output.
 - `<COUNTS>` — `{critical, high, medium, low}` totals.
-- `<TOTAL_AGENTS_LAUNCHED>` — count of baseline + fired conditional agents, minus mode-filtered, minus the caller's `<EXCLUDE_AGENTS>` list. Used by the caller's report to phrase `<FAILED_AGENTS> of <TOTAL_AGENTS_LAUNCHED> agents failed`.
+- `<TOTAL_AGENTS_LAUNCHED>` — count of baseline + fired conditional agents, minus the caller's `<EXCLUDE_AGENTS>` list. Used by the caller's report to phrase `<FAILED_AGENTS> of <TOTAL_AGENTS_LAUNCHED> agents failed`.
 
 The caller formats and routes these per its mode (GitHub COMMENT / terminal output / fix application).

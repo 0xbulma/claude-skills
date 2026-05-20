@@ -21,12 +21,13 @@ Users install via `/plugin marketplace add 0xbulma/claude-skills` → `/plugin i
         └─ lists ─→ plugins/local/
                           │
                           ├─ .claude-plugin/plugin.json
-                          ├─ skills/{pr-switch,pr-review-local,pr-review-gh,pr-fix,setup,pr-create,
-                          │         extract-plan,tib-create,tip-create,tib-ship}/SKILL.md
-                          ├─ skills/pr-review-engine/
-                          │   ├─ SKILL.md             ← shared Steps 3–6 (the dispatcher)
-                          │   ├─ agents/*.md          ← 11 versioned reviewers (5 baseline + 6 conditional)
-                          │   └─ references/*.md      ← shared rubrics loaded on demand by agents
+                          ├─ skills/
+                          │   ├─ {pr-switch,pr-review-local,pr-review-gh,pr-fix,setup,
+                          │   │    pr-create,extract-plan,tib-create,tip-create,tib-ship}/SKILL.md
+                          │   └─ pr-review-engine/
+                          │       ├─ SKILL.md             ← shared Steps 3–6 (the dispatcher)
+                          │       ├─ agents/*.md          ← 11 versioned reviewers (5 baseline + 6 conditional)
+                          │       └─ references/*.md      ← shared rubrics loaded on demand by agents
                           ├─ hooks/hooks.json            ← SessionStart auto-install
                           └─ bin/install-prereqs.sh      ← idempotent prereq install
 ```
@@ -77,7 +78,7 @@ The SessionStart hook fires on each `claude` invocation, so prereqs install the 
 
 ## Path resolution inside `SKILL.md`
 
-- **Plugin-local files** (lib, personas, bin): use `${CLAUDE_PLUGIN_ROOT}/...`. The variable is set by Claude Code to the installed plugin's root directory.
+- **Plugin-local files** (`skills/pr-review-engine/{SKILL.md,agents,references}`, `bin`): use `${CLAUDE_PLUGIN_ROOT}/...`. The variable is set by Claude Code to the installed plugin's root directory.
 - **Rubric skills**: discover at run time via Bash:
   ```bash
   find ~/.claude -type f -name SKILL.md -path "*<skill-name>*" 2>/dev/null | head -1
@@ -90,7 +91,7 @@ Three levels of versioning, all semver:
 
 1. **Plugin version** — `plugins/local/.claude-plugin/plugin.json` `version`. The release pin users see in `/plugin marketplace update`. Bump on every release.
 2. **Per-skill version** — `version:` in each `SKILL.md` frontmatter. Lets you ship a skill-level changelog without bumping the whole plugin.
-3. **Per-persona version** — `version:` in each `personas/*.md` frontmatter. Personas evolve fast; per-file versioning lets us track rubric drift independently.
+3. **Per-agent version** — `version:` in each `plugins/local/skills/pr-review-engine/agents/*.md` frontmatter. Agents evolve fast; per-file versioning lets us track rubric drift independently.
 
 Semver rules:
 

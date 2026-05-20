@@ -1,6 +1,6 @@
 # claude-skills
 
-A Claude Code [plugin marketplace](https://code.claude.com/docs/en/plugin-marketplaces) for **TypeScript + React + Vercel**-optimized PR review, PR fix, and decision-record / Linear workflows. Ships one plugin (`local`) with ten slash-command skills, an 11-persona review library (5 baseline + 6 conditional, including `runtime-validation` which auto-fires on route-level UI changes), and a SessionStart hook that auto-installs 18 rubric skills (15 [Vercel-published](https://vercel.com/docs/agent-resources/skills) + 3 community) from the [skills.sh](https://skills.sh) registry.
+A Claude Code [plugin marketplace](https://code.claude.com/docs/en/plugin-marketplaces) for **TypeScript + React + Vercel**-optimized PR review, PR fix, and decision-record / Linear workflows. Ships one plugin (`local`) with ten user-invokable slash-command skills plus one engine skill (`pr-review-engine`), which dispatches an 11-agent review library (5 baseline + 6 conditional, including `runtime-validation` which auto-fires on route-level UI changes), and a SessionStart hook that auto-installs 18 rubric skills (15 [Vercel-published](https://vercel.com/docs/agent-resources/skills) + 3 community) from the [skills.sh](https://skills.sh) registry.
 
 Works on any project — but the conditional personas are tuned for TS/JS/JSX/TSX codebases, with Vercel's `vercel-react-best-practices` / `web-design-guidelines` / `vercel-composition-patterns`, Tailwind, and Web3 (viem/wagmi/ethers) as runtime rubric.
 
@@ -22,22 +22,22 @@ Works on any project — but the conditional personas are tuned for TS/JS/JSX/TS
 │   │   ├── tib-create/SKILL.md       # /local:tib-create <title>
 │   │   ├── tip-create/SKILL.md       # /local:tip-create <title> [--tib <path>]…
 │   │   ├── tib-ship/SKILL.md         # /local:tib-ship <tib-path> [--max-iters N] [--no-runtime]
-│   │   └── setup/SKILL.md            # /local:setup
-│   ├── skills/pr-review-engine/      # shared review engine (was lib/ + personas/)
-│   │   ├── SKILL.md                          # dispatcher: Steps 3–6
-│   │   ├── agents/                           # 11 reviewers (5 baseline + 6 conditional)
-│   │   │   ├── code-quality.md                   # baseline
-│   │   │   ├── code-simplifier-performance.md    # baseline
-│   │   │   ├── documentation.md                  # baseline
-│   │   │   ├── silent-failure-hunter.md          # baseline
-│   │   │   ├── test-coverage.md                  # baseline
-│   │   │   ├── react-next-best-practices.md      # conditional (<HAS_REACT>)
-│   │   │   ├── ui-styling-accessibility.md       # conditional (<HAS_TAILWIND> OR <HAS_STYLING>)
-│   │   │   ├── ai-sdk-best-practices.md          # conditional (<HAS_AI_SDK>)
-│   │   │   ├── ci-release-security.md            # conditional (<HAS_CI_RELEASE>)
-│   │   │   ├── web3-security.md                  # conditional (<HAS_WEB3>)
-│   │   │   └── runtime-validation.md             # conditional (<HAS_ROUTE_UI>)
-│   │   └── references/                       # shared rubrics loaded on demand
+│   │   ├── setup/SKILL.md            # /local:setup
+│   │   └── pr-review-engine/         # shared review engine (was lib/ + personas/)
+│   │       ├── SKILL.md                          # dispatcher: Steps 3–6
+│   │       ├── agents/                           # 11 reviewers (5 baseline + 6 conditional)
+│   │       │   ├── code-quality.md                   # baseline
+│   │       │   ├── code-simplifier-performance.md    # baseline
+│   │       │   ├── documentation.md                  # baseline
+│   │       │   ├── silent-failure-hunter.md          # baseline
+│   │       │   ├── test-coverage.md                  # baseline
+│   │       │   ├── react-next-best-practices.md      # conditional (<HAS_REACT>)
+│   │       │   ├── ui-styling-accessibility.md       # conditional (<HAS_TAILWIND> OR <HAS_STYLING>)
+│   │       │   ├── ai-sdk-best-practices.md          # conditional (<HAS_AI_SDK>)
+│   │       │   ├── ci-release-security.md            # conditional (<HAS_CI_RELEASE>)
+│   │       │   ├── web3-security.md                  # conditional (<HAS_WEB3>)
+│   │       │   └── runtime-validation.md             # conditional (<HAS_ROUTE_UI>)
+│   │       └── references/                       # shared rubrics loaded on demand
 │   ├── hooks/hooks.json              # SessionStart auto-install
 │   ├── bin/install-prereqs.sh        # idempotent prereq installer
 │   └── README.md
