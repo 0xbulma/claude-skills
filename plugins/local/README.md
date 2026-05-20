@@ -1,9 +1,10 @@
 # local
 
-Nine slash-command skills for Claude Code.
+Ten slash-command skills for Claude Code.
 
-**PR review / fix** (delegates to the shared `lib/pr-review-base.md` + 11-persona library)
+**PR navigation / review / fix** (review side delegates to the shared `lib/pr-review-base.md` + 11-persona library)
 
+- **`/local:pr-switch <pr-url-or-num>`** — switch the local checkout to a PR's head branch. Accepts a full GitHub PR URL, `owner/repo#num` shorthand, or a bare number. Refuses cross-repo URLs; resolves a dirty tree interactively (stash/commit/discard/abort).
 - **`/local:pr-review-local`** — pre-PR review on the local branch (committed + uncommitted). Terminal-only output. `--fix` applies mechanical fixes.
 - **`/local:pr-review-gh <PR>`** — review an open GitHub PR; posts findings as a `COMMENT` review (never auto-approves). `--watch` re-reviews on every new commit.
 - **`/local:pr-fix <PR>`** — read unresolved review comments, classify, apply confidence-gated fixes, push, reply, resolve. `--watch` runs a cron-driven fix loop.

@@ -6,7 +6,7 @@
     {
       "name": "local",
       "source": "./plugins/local",
-      "description": "Nine skills: pre-PR local review, GitHub PR review, PR-fix automation, draft PR creation, doc-to-Linear plan extraction, TIB scaffolding, TIP (implementation plan) scaffolding, yolo TIB-ship orchestrator (scaffold-implement-self-review loop, TDD per block), and rubric setup. 11-persona review library (5 baseline + 6 conditional, including route-level runtime validation via agent-browser) + SessionStart hook that auto-installs 18 Vercel/community rubric skills.",
+      "description": "Ten skills: PR branch switching, pre-PR local review, GitHub PR review, PR-fix automation, draft PR creation, doc-to-Linear plan extraction, TIB scaffolding, TIP (implementation plan) scaffolding, yolo TIB-ship orchestrator (scaffold-implement-self-review loop, TDD per block), and rubric setup. 11-persona review library (5 baseline + 6 conditional, including route-level runtime validation via agent-browser) + SessionStart hook that auto-installs 18 Vercel/community rubric skills.",
       "category": "code-review",
       "keywords": ["pr-review", "code-review", "github", "personas", "vercel", "react", "typescript", "linear", "adr", "rfc", "tib"]
     }

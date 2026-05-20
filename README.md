@@ -1,6 +1,6 @@
 # claude-skills
 
-A Claude Code [plugin marketplace](https://code.claude.com/docs/en/plugin-marketplaces) for **TypeScript + React + Vercel**-optimized PR review, PR fix, and decision-record / Linear workflows. Ships one plugin (`local`) with nine slash-command skills, an 11-persona review library (5 baseline + 6 conditional, including `runtime-validation` which auto-fires on route-level UI changes), and a SessionStart hook that auto-installs 18 rubric skills (15 [Vercel-published](https://vercel.com/docs/agent-resources/skills) + 3 community) from the [skills.sh](https://skills.sh) registry.
+A Claude Code [plugin marketplace](https://code.claude.com/docs/en/plugin-marketplaces) for **TypeScript + React + Vercel**-optimized PR review, PR fix, and decision-record / Linear workflows. Ships one plugin (`local`) with ten slash-command skills, an 11-persona review library (5 baseline + 6 conditional, including `runtime-validation` which auto-fires on route-level UI changes), and a SessionStart hook that auto-installs 18 rubric skills (15 [Vercel-published](https://vercel.com/docs/agent-resources/skills) + 3 community) from the [skills.sh](https://skills.sh) registry.
 
 Works on any project — but the conditional personas are tuned for TS/JS/JSX/TSX codebases, with Vercel's `vercel-react-best-practices` / `web-design-guidelines` / `vercel-composition-patterns`, Tailwind, and Web3 (viem/wagmi/ethers) as runtime rubric.
 
@@ -13,6 +13,7 @@ Works on any project — but the conditional personas are tuned for TS/JS/JSX/TS
 ├── plugins/local/
 │   ├── .claude-plugin/plugin.json
 │   ├── skills/
+│   │   ├── pr-switch/SKILL.md        # /local:pr-switch <pr-url-or-num>
 │   │   ├── pr-review-local/SKILL.md  # /local:pr-review-local
 │   │   ├── pr-review-gh/SKILL.md     # /local:pr-review-gh <PR>
 │   │   ├── pr-fix/SKILL.md           # /local:pr-fix <PR>
@@ -44,8 +45,9 @@ Works on any project — but the conditional personas are tuned for TS/JS/JSX/TS
 
 ## Skills
 
-**PR review / fix**
+**PR navigation / review / fix**
 
+- **`/local:pr-switch <pr-url-or-num>`** — switch the local checkout to a PR's head branch. Accepts a full GitHub PR URL, `owner/repo#num` shorthand, or a bare number. Refuses cross-repo URLs; resolves a dirty tree interactively (stash/commit/discard/abort).
 - **`/local:pr-review-local`** — pre-PR review on the working tree (committed + uncommitted). Terminal output. `--fix` applies mechanical fixes.
 - **`/local:pr-review-gh <PR>`** — review an open GitHub PR via GraphQL. Posts findings as a `COMMENT` review (never auto-approves). `--watch` re-runs on every new commit.
 - **`/local:pr-fix <PR>`** — read unresolved review comments, classify, apply confidence-gated fixes, push, reply, resolve. `--watch` runs a 2-minute cron fix loop.

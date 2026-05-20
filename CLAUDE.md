@@ -4,14 +4,14 @@ Repo-level guidance for Claude Code working on this repo.
 
 ## What this repo is
 
-A Claude Code **plugin marketplace** containing a single plugin (`local`) with nine slash-command skills:
+A Claude Code **plugin marketplace** containing a single plugin (`local`) with ten slash-command skills:
 
-- **PR review / fix** — `pr-review-local`, `pr-review-gh`, `pr-fix`, `setup`
+- **PR navigation / review / fix** — `pr-switch` (check out a PR's branch from a URL/number), `pr-review-local`, `pr-review-gh`, `pr-fix`, `setup`
 - **PR / workflow authoring** — `pr-create` (draft PR from the current diff), `extract-plan` (TIB/ADR → Linear project + milestones + issues), `tib-create` (scaffold a new TIB), `tip-create` (scaffold a TIP — concrete implementation plan paired with a TIB), `tib-ship` (yolo execute a TIB end-to-end: scaffold TIPs → implement TDD-style → review→fix loop → ready-to-push branch)
 
 The review side and its persona library are **optimized for TypeScript + React + Vercel** codebases — JSX/TSX detection, Server Components, React 19 APIs, Tailwind, Vercel's Web Interface Guidelines, Web3 (viem/wagmi/ethers) when present, and route-level runtime validation via `agent-browser`. It works on any project, but the conditional personas are tuned for the TS/React/Vercel stack. The four authoring skills (`pr-create`, `extract-plan`, `tib-create`, `tip-create`) are repo-agnostic; `tib-ship` is repo-agnostic for orchestration but its inner per-block loop and `runtime-validation` step assume a JS/TS toolchain.
 
-Users install via `/plugin marketplace add 0xbulma/claude-skills` → `/plugin install local@claude-skills`. They invoke the skills as `/local:pr-review-local`, `/local:pr-review-gh`, `/local:pr-fix`, `/local:setup`, `/local:pr-create`, `/local:extract-plan`, `/local:tib-create`, `/local:tip-create`, `/local:tib-ship`.
+Users install via `/plugin marketplace add 0xbulma/claude-skills` → `/plugin install local@claude-skills`. They invoke the skills as `/local:pr-switch`, `/local:pr-review-local`, `/local:pr-review-gh`, `/local:pr-fix`, `/local:setup`, `/local:pr-create`, `/local:extract-plan`, `/local:tib-create`, `/local:tip-create`, `/local:tib-ship`.
 
 ## Mental model
 
@@ -21,7 +21,7 @@ Users install via `/plugin marketplace add 0xbulma/claude-skills` → `/plugin i
         └─ lists ─→ plugins/local/
                           │
                           ├─ .claude-plugin/plugin.json
-                          ├─ skills/{pr-review-local,pr-review-gh,pr-fix,setup,pr-create,extract-plan,tib-create,tip-create,tib-ship}/SKILL.md
+                          ├─ skills/{pr-switch,pr-review-local,pr-review-gh,pr-fix,setup,pr-create,extract-plan,tib-create,tip-create,tib-ship}/SKILL.md
                           ├─ lib/pr-review-base.md   ← shared Steps 3–6
                           ├─ personas/*.md               ← 11 versioned reviewers (5 baseline + 6 conditional)
                           ├─ hooks/hooks.json            ← SessionStart auto-install

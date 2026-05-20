@@ -14,7 +14,7 @@ setup() {
   PLUGIN_MANIFEST="$PLUGIN_DIR/.claude-plugin/plugin.json"
   SKILLS_DIR="$PLUGIN_DIR/skills"
   PERSONAS_DIR="$PLUGIN_DIR/personas"
-  SKILLS_ALL="pr-fix pr-review-gh pr-review-local setup pr-create extract-plan tib-create tip-create tib-ship"
+  SKILLS_ALL="pr-fix pr-review-gh pr-review-local setup pr-create extract-plan tib-create pr-switch tip-create tib-ship"
 }
 
 @test "marketplace.json is valid JSON" {
@@ -37,7 +37,7 @@ setup() {
   [ "$status" -eq 0 ]
 }
 
-@test "nine skills exist at expected paths" {
+@test "ten skills exist at expected paths" {
   for skill in $SKILLS_ALL; do
     [ -f "$SKILLS_DIR/$skill/SKILL.md" ] || { echo "missing $SKILLS_DIR/$skill/SKILL.md" >&2; return 1; }
   done
@@ -137,10 +137,11 @@ setup() {
   command -v claude >/dev/null 2>&1 || skip "claude CLI not on PATH"
 
   # Non-interactive smoke: load the plugin and ask Claude to list skills.
-  # The 8 model-invokable skills should appear; `setup` is intentionally
+  # The 9 model-invokable skills should appear; `setup` is intentionally
   # disable-model-invocation: true and may not appear in the listing.
   run claude --plugin-dir "$PLUGIN_DIR" -p "List the plugin slash commands you can see. Just print their names." 2>&1
   [ "$status" -eq 0 ]
+  echo "$output" | grep -q "local:pr-switch"
   echo "$output" | grep -q "local:pr-fix"
   echo "$output" | grep -q "local:pr-review-gh"
   echo "$output" | grep -q "local:pr-review-local"

@@ -1,7 +1,7 @@
 {
   "name": "local",
-  "version": "2.0.0",
-  "description": "PR review, PR creation, and Linear/TIB-TIP authoring slash commands. Nine skills (pr-review-local, pr-review-gh, pr-fix, setup, pr-create, extract-plan, tib-create, tip-create, tib-ship), a shared review base, and an 11-persona review library (5 baseline + 6 conditional, including route-level runtime validation).",
+  "version": "2.3.0",
+  "description": "PR navigation, review, fix, creation, and Linear/TIB-TIP authoring slash commands. Ten skills (pr-switch, pr-review-local, pr-review-gh, pr-fix, setup, pr-create, extract-plan, tib-create, tip-create, tib-ship), a shared review base, and an 11-persona review library (5 baseline + 6 conditional, including route-level runtime validation).",
   "author": { "name": "0xbulma", "url": "https://github.com/0xbulma" },
   "license": "MIT",
   "homepage": "https://github.com/0xbulma/claude-skills"
