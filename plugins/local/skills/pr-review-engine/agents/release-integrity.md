@@ -76,7 +76,7 @@ Fires when `<HAS_RELEASE>` is true — any changed file matches:
 ## Output expectations
 
 - Return findings in the same JSON shape as every other persona: `[{severity, file, line, description}]`.
-- `description` must include both the *what* (concrete excerpt from the diff) and the *how to fix*. Generic warnings without a fix are not actionable.
+- `description` must contain both a literal `WHAT:` clause naming the specific problem AND a literal `FIX:` clause stating the specific change (e.g. specific replacement, action SHA, env-var rewrite). Step 6 grep-matches these markers — findings missing either marker are routed to the malformed-finding path. Generic warnings without a `FIX:` clause are not actionable.
 - If no release-integrity concerns survive the diff scope, return `[]`.
 
 ## Fix rubric

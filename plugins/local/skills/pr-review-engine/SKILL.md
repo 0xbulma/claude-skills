@@ -52,7 +52,10 @@ git diff --name-only $MERGE_BASE..<HEAD_REF>
 git diff --unified=0 $MERGE_BASE..<HEAD_REF>
 ```
 
-Build `<CHANGED_LINES>` as a map `{ "<file-path>": <sorted-int-set> }` from those hunk headers. For each `@@ -OLD,OLD_COUNT +NEW,NEW_COUNT @@` header that follows a `+++ b/<file>` line, add `{NEW, NEW+1, ..., NEW+NEW_COUNT-1}` to that file's set. Pure-rename hunks (NEW_COUNT == 0) contribute no entries.
+Build `<CHANGED_LINES>` as a map `{ "<file-path>": <sorted-int-set> }` from those hunk headers. For each `@@ -OLD,OLD_COUNT +NEW,NEW_COUNT @@` header that follows a `+++ b/<file>` line, add `{NEW, NEW+1, ..., NEW+NEW_COUNT-1}` to that file's set. Two edge cases:
+
+- **Deletion-only hunks** (`NEW_COUNT == 0`): add `NEW` to the set anyway (one line, the new-file line just above the deletion). This preserves adjacent-code findings on a pure deletion — the deletion itself is what made the surrounding code worse, and the line just above is the right anchor.
+- **Pure renames** (no hunks at all between a `--- a/<file>` and `+++ b/<file>`): file's set stays empty. Step 6's line-level filter short-circuits when the set is empty (see Step 6 sub-step 1) so adjacent-code findings still survive on a rename-only changed file via the file-level filter alone.
 
 If `<DIFF_SOURCE>=local` AND uncommitted changes exist, also include them:
 
@@ -159,6 +162,21 @@ Agent specs live in `${CLAUDE_PLUGIN_ROOT}/skills/pr-review-engine/agents/*.md`.
 5. Launch ALL selected agents **in parallel** using the Agent tool (subagent_type: `"general-purpose"`).
 6. Track `<TOTAL_AGENTS_LAUNCHED>` = count of agents actually launched (baseline + any fired conditionals − mode-filtered − excluded).
 
+### Sub-agent prompt envelope (what the dispatcher must inject)
+
+For every spawned sub-agent, the dispatcher **must** assemble the launch prompt from the following parts, in this order:
+
+1. The agent file body, verbatim (its frontmatter + Markdown prose).
+2. `<PROJECT_CONTEXT>` from Step 4 (root + per-package docs, lint contract).
+3. The diff in full (committed + uncommitted when `<DIFF_SOURCE>=local`).
+4. The full content of changed files (read from local FS via the Read tool).
+5. The conditional flag values (`<HAS_REACT>`, `<HAS_WEB3>`, `<HAS_WORKFLOWS>`, etc.).
+6. `<CHANGED_LINES>` serialized as JSON: `{ "<path>": [<line>, <line>, ...] }`.
+7. **The "Shared per-agent contract" bullets below, copied verbatim into the prompt.** The contract names obligations on the agent (WHAT/FIX schema, line-tolerance window, scope guards) — these MUST be in the sub-agent's context, not just documented here in the dispatcher's SKILL.md. Without this injection, agents won't know to emit the schema and Step 6.2 will route every finding as malformed.
+8. **The calibration example pair** (the kept-finding + dropped-finding pair below), copied verbatim. Anchors the agent's output shape.
+
+The dispatcher should NOT paraphrase or summarize these parts — copy them. Drift between the dispatcher's notion of the contract and what the agent receives is exactly the failure mode the engine's schema check is supposed to prevent.
+
 ### Shared per-agent contract (applied uniformly to every launched agent)
 
 - Each agent receives: full diff, full content of changed files (read from local FS), `<PROJECT_CONTEXT>` from Step 4, the conditional flag values, `<CHANGED_LINES>` (per-file set of line numbers the diff added or modified), the agent file body, the repo path / branches.
@@ -198,10 +216,6 @@ A finding that would be **dropped** in Step 6 (bad shape):
 ```
 
 This is dropped because: no `WHAT:` clause naming the specific problem, no `FIX:` clause stating the specific change, and the underlying suggestion is a stylistic preference ("for readability") — a textbook nitpick the master scope-guard prohibits. Producing findings like this wastes the human reviewer's attention and pushes them toward auto-dismissing the agent's output.
-
-#### A note on schema strictness
-
-The `WHAT:` and `FIX:` markers are literal — Step 6 grep-matches them. The discipline they enforce isn't bureaucratic; it's the difference between "an actionable bug report a junior engineer can fix" and "a vague suggestion that needs interpretation before it becomes work." If a finding genuinely doesn't fit the WHAT/FIX shape, the underlying observation probably isn't actionable enough to ship — withhold it.
 
 ### Current agent inventory
 
@@ -246,19 +260,23 @@ Merge all agent results into a single list:
 
    If `finding.file` is not in `<CHANGED_FILES>`, **drop the finding** and increment `<DROPPED_OUT_OF_SCOPE>`.
 
-   **Line-level scope filter (in-file).** For findings whose `file` IS in `<CHANGED_FILES>`, check `finding.line` against the file's `<CHANGED_LINES>` set built in Step 3:
+   **Line-level scope filter (in-file).** For findings whose `file` IS in `<CHANGED_FILES>`, check `finding.line` against the file's `<CHANGED_LINES>` set built in Step 3. **First short-circuit:** if the file's `<CHANGED_LINES>` set is empty (pure rename — no hunks contributed any new-file lines), skip the line-level filter for that file entirely. The file-level filter already kept it; don't double-drop. Otherwise:
    - If `finding.line` is in the set → keep.
    - If `finding.line` is outside the set but within ±15 lines of any changed line → keep (the "adjacent code" tolerance: a renamed function's remaining callers, a new code path that exposes an existing bug). The window is deliberately generous to preserve legitimate adjacent findings; agents are not penalized for pointing at the surrounding block.
-   - Otherwise → **drop** and increment `<DROPPED_PRE_EXISTING>`. The finding's line is too far from any diff hunk to plausibly have been introduced by this change.
+   - Otherwise → **drop** and increment `<DROPPED_PRE_EXISTING>`. The finding is also tagged with `distance_to_nearest_changed_line` (the integer line-distance to the closest entry in the set) so the audit section can show how far outside the window each drop was — a useful signal when calibrating whether ±15 is the right number for a given codebase.
 
-   Pure-rename hunks have empty `<CHANGED_LINES>` sets; on a rename-only diff, line-level filtering is a no-op (file-level filter already caught what it could). Documented as a known limitation: a rename-only diff cannot use line-level filtering and falls back to file-level only.
+   The ±15 tolerance window is a fixed engine constant. Future work may expose it as a caller-tunable `<LINE_TOLERANCE>` input if metrics show it needs per-project calibration.
 
    **Markdown documentation-example filter.** For findings whose `file` ends in `.md` AND whose `description` matches one of the secret/injection FP-suspect patterns (case-insensitive: `secret`, `API key`, `token`, `password`, `_authToken`, `eval(`, `dangerouslySetInnerHTML`, `private key`, `mnemonic`), check whether the cited line falls inside a fenced code block:
-   - Read the file. Walk lines `1..finding.line` and count ` ``` ` markers.
+   - Read the file. Walk lines `1..(finding.line - 1)` (i.e. stop one line short — a finding cited ON a fence line itself is treated as outside the block, not inside).
+   - Count fence markers, where a fence marker is a line whose first three non-whitespace characters are either ` ``` ` (backtick) OR `~~~` (tilde). CommonMark recognizes both; the rule must cover both or it silently misses tilde-fenced examples.
    - If the count is odd, `finding.line` is inside a fenced block → likely a documentation example, not a real defect.
    - Drop the finding and increment `<DROPPED_DOC_EXAMPLE>`.
 
-   This catches the common false positive where an agent flags `OPENAI_API_KEY` or `_authToken=...` inside a code-fence example showing what NOT to do. The filter is deliberately narrow: only `.md` files, only descriptions matching the FP pattern list, only inside fenced blocks. A real hardcoded secret in a `.md` outside a code fence (rare but possible) is preserved.
+   This catches the common false positive where an agent flags `OPENAI_API_KEY` or `_authToken=...` inside a code-fence example showing what NOT to do. The filter is deliberately narrow: only `.md` files, only descriptions matching the FP pattern list, only inside backtick or tilde fences. Known limitations (preserved as findings, not silently dropped):
+   - **Indented code blocks** (4-space) are NOT detected — a secret-shaped string in an indented block survives the filter. Rare in practice; flag for follow-up if metrics show false-positive rate matters.
+   - **Unclosed fences** (odd fence count at EOF, common in partial drafts) cause everything after the unclosed fence to read as "inside a block" — the filter may over-drop. Accepted trade-off; the audit section surfaces the drop for user review.
+   - A real hardcoded secret in a `.md` outside a code fence (rare but possible) is preserved as a real finding.
 
    After all three sub-filters, print one log line per counter that is non-zero:
    `Scope filter: dropped <DROPPED_OUT_OF_SCOPE> file-level + <DROPPED_PRE_EXISTING> line-level + <DROPPED_DOC_EXAMPLE> doc-example finding(s).`
@@ -301,7 +319,9 @@ The caller (Step 7 of `/local:pr-review-gh` / `/local:pr-review-local` / `/local
 - `<DROPPED_FINDINGS>` — findings that the scope filter dropped, each tagged with the drop reason (`file-out-of-scope` / `line-pre-existing` / `doc-example-fp`). Surfaced to the caller as a collapsible audit section, not a silent nuke.
 - `<FAILED_AGENTS>` — count + names of agents that returned `agent_error` or malformed output (including findings that failed the WHAT/FIX schema check).
 - `<COUNTS>` — `{critical, high, medium, low}` totals on the kept findings.
-- `<DROPPED_COUNTS>` — `{file_out_of_scope, line_pre_existing, doc_example}` totals on the dropped findings.
+- `<DROPPED_COUNTS>` — `{out_of_scope, pre_existing, doc_example}` totals on the dropped findings. The keys match the counter names from Step 6 sub-step 1 (`<DROPPED_OUT_OF_SCOPE>` → `out_of_scope`, etc.) — read the named counter, write the matching lowercase key.
 - `<TOTAL_AGENTS_LAUNCHED>` — count of baseline + fired conditional agents, minus mode-filtered (when `<MODE>=fix`), minus the caller's `<EXCLUDE_AGENTS>` list. Used by the caller's report to phrase `<FAILED_AGENTS> of <TOTAL_AGENTS_LAUNCHED> agents failed`.
 
-The caller formats and routes these per its mode (GitHub COMMENT / terminal output / fix application). The collapsible dropped-findings section is the user's audit trail for the filters — if the line-level filter wrongly drops a legitimate adjacent-code finding, the user can pull it back in.
+The caller formats and routes these per its mode (GitHub COMMENT / terminal output / fix application).
+
+**Consumer-surfacing state (honest):** as of this commit, none of the four consumer skills (`pr-review-gh`, `pr-review-local`, `pr-fix`, `tib-ship`) yet read `<DROPPED_FINDINGS>` or `<DROPPED_COUNTS>` — they each enumerate only the four pre-filter fields in their Step 6→7 handoff stanzas. Until the consumers are updated (tracked as a follow-up commit), the dropped-findings audit trail is engine-internal: the per-counter log line in Step 6 sub-step 1 is the only surface the user sees. The engine still emits `<DROPPED_FINDINGS>` to the structured output so the data is available for the follow-up to consume; nothing is silently nuked, but the "collapsible audit section" UX is not wired yet.

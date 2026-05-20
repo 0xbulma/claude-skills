@@ -80,7 +80,7 @@ Cross-check `references/secrets.md` for the canonical severity and fix patterns;
 ## Output expectations
 
 - Return findings in the same JSON shape as every other persona: `[{severity, file, line, description}]`.
-- `description` must include both the *what* (concrete excerpt from the diff) and the *how to fix* (specific replacement, action SHA, env-var rewrite, etc.). Generic warnings without a fix are not actionable.
+- `description` must contain both a literal `WHAT:` clause naming the specific problem AND a literal `FIX:` clause stating the specific change (e.g. specific replacement, action SHA, env-var rewrite). Step 6 grep-matches these markers — findings missing either marker are routed to the malformed-finding path. Generic warnings without a `FIX:` clause are not actionable.
 - If no CI-security concerns survive the diff scope, return `[]` — do NOT speculate about workflows that weren't changed.
 
 ## Fix rubric
