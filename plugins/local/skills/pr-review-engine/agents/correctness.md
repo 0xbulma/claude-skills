@@ -1,18 +1,19 @@
 ---
-name: code-quality
+name: correctness
 version: 1.0.0
 kind: baseline
 applies: |
   The project's spec for type discipline, forbidden patterns, and naming
   (look for AGENTS.md / CLAUDE.md at the repo root or per-package). Cite
-  the section by number / title when present in `<PROJECT_CONTEXT>`. When
-  no spec exists, use this persona's body as the rubric.
+  the section by number / title when present in the project-context bundle
+  the dispatcher injects. When no spec exists, use this persona's body as
+  the rubric.
 out-of-scope:
-  - Error-handling depth / swallowed catches / missing error states — see silent-failure-hunter.
+  - Error-handling depth / swallowed catches / missing error states — see error-handling.
   - Mechanical style (formatter, organize-imports, indent) — see the project's lint contract; this persona owns *type* discipline not *style*.
-  - JSDoc / TSDoc shape on exported symbols — see documentation.
-  - Web3-specific concerns (calldata, permits, chainId, contract addresses) — see web3-security.
-  - CI / publish-flow / lockfile concerns — see ci-release-security.
+  - JSDoc / TSDoc shape on exported symbols — see docs.
+  - Web3-specific concerns (calldata, permits, chainId, contract addresses) — see web3.
+  - CI / publish-flow / lockfile concerns — see ci-security, release-integrity, dependencies.
 focus: Type safety inside function bodies, code smells, early returns, naming, magic numbers, complexity, security primitives at the code level (hardcoded secrets, injection, eval).
 ---
 
@@ -45,12 +46,12 @@ Code-level correctness inside the function bodies the diff touches. The authorit
 
 ### Security primitives at the code level
 
-(Generic-purpose security; Web3-specific patterns are `web3-security`'s.)
+(Generic-purpose security; Web3-specific patterns are `web3`'s.)
 
-- Hardcoded secrets, API keys, tokens, private keys, or RPC URLs with embedded credentials.
-- Injection risks in string-templated input (SQL-like queries, shell commands, dynamic regex from user input).
-- `eval`, `Function(...)` constructors, dynamic `import(<userInput>)`.
-- Insecure use of `dangerouslySetInnerHTML` / equivalent.
+- Hardcoded secrets, API keys, tokens, private keys, or RPC URLs with embedded credentials. Cross-check `references/secrets.md` for the canonical severity table and fix patterns.
+- Injection risks in string-templated input (SQL-like queries, shell commands, dynamic regex from user input). Cross-check `references/injection.md`.
+- `eval`, `Function(...)` constructors, dynamic `import(<userInput>)`. Cross-check `references/injection.md`.
+- Insecure use of `dangerouslySetInnerHTML` / equivalent. Cross-check `references/injection.md`.
 - Auth / authz bypass: missing permission checks, broken access control.
 - Insecure data exposure: sensitive data in logs, error messages, or client-side state.
 
@@ -70,9 +71,9 @@ Code-level correctness inside the function bodies the diff touches. The authorit
 
 ## Out-of-scope reminders (for the sub-agent)
 
-- Do NOT review error-handling depth (empty `catch`, missing recovery paths, unhandled async failures, missing loading/error states) — that's `silent-failure-hunter`'s job.
+- Do NOT review error-handling depth (empty `catch`, missing recovery paths, unhandled async failures, missing loading/error states) — that's `error-handling`'s job.
 - Do NOT review mechanical formatter / linter style — defer to the project's lint contract.
-- Do NOT review JSDoc / TSDoc shape on exported symbols — `documentation`.
-- Do NOT review Web3-specific patterns — `web3-security`.
-- Do NOT review CI / publish-flow / lockfile concerns — `ci-release-security`.
+- Do NOT review JSDoc / TSDoc shape on exported symbols — `docs`.
+- Do NOT review Web3-specific patterns — `web3`.
+- Do NOT review CI / publish-flow / lockfile concerns — `ci-security`, `release-integrity`, `dependencies`.
 - Reference the project's spec (root and per-package `AGENTS.md` / `CLAUDE.md`, `MISSION.md`, `CONTRIBUTING.md`) when present in `<PROJECT_CONTEXT>`.

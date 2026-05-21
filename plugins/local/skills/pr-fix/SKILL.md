@@ -402,17 +402,24 @@ For each file with findings, build a complete understanding:
    - **Tailwind** (file contains Tailwind-shaped class strings in JSX):
      - `TW_RUBRIC=$(find_skill tailwind-design-system)`; if non-empty, Read `$TW_RUBRIC` and print `Loaded conditional skill: tailwind-design-system`. If empty, log the degradation message and continue.
 
-   - **Web3** (`<HAS_WEB3>` is true and file imports a contract-interaction library — `viem`, `wagmi`, `ethers`, or a project-specific web3 SDK — or contains contract addresses/calldata):
-     - Re-read the Web3 portion of `<PROJECT_CONTEXT>` plus any `SECURITY.md` / `audits/*.md` discovered.
-     - Use `${CLAUDE_PLUGIN_ROOT}/personas/web3-security.md` as the rubric for the confidence gate.
+   - **Engine fix-rubric agents (Web3, CI, release, dependencies, docs)**:
 
-   - **CI / release files** (fix touches `.github/workflows/**`, `.github/actions/**`, `.changeset/**`, `pnpm-lock.yaml` / `package-lock.json` / `yarn.lock`, `pnpm-workspace.yaml`, `.npmrc`, or a `package.json` `scripts.*publish*` / `scripts.*release*` field):
-     - If the target repo defines its own CI/release rules (look for a `Review automation` / `CI/release security` / `Release` section in the root `AGENTS.md` / `CLAUDE.md`, or a dedicated `docs/security/` / `SECURITY.md`), read that section first — it is authoritative.
-     - Otherwise (or in addition) use `${CLAUDE_PLUGIN_ROOT}/personas/ci-release-security.md` as the rubric: workflow injection, action pinning, write-token hardening, lockfile drift, publish-flow integrity, `.npmrc` hygiene.
+     Instead of hardcoding agent filenames, discover the applicable rubric set from the engine: an agent is "fix-applicable" iff its body contains a `## Fix rubric` section. Use the engine's bundled discovery script so this skill and the bats invariant share one implementation:
 
-   - **Persona / spec-layering files** (fix touches `AGENTS.md` / `CLAUDE.md` itself, or any file under `.agents/personas/` / `.claude/agents/` / similar):
-     - If the target repo uses a persona system (look for `.agents/personas/` or `.claude/agents/` and any `> Applied by personas: …` callouts in the spec), the bidirectional-backlink invariant applies: changes to a persona's `applies:` frontmatter must atomically update the corresponding callout in the spec, and vice versa. A one-sided fix is incomplete.
-     - Use `${CLAUDE_PLUGIN_ROOT}/personas/documentation.md` (sections 3–4) as the rubric.
+     ```bash
+     FIX_AGENTS=$("${CLAUDE_PLUGIN_ROOT}/skills/pr-review-engine/scripts/list-fix-rubric-agents.sh" 2>/dev/null || true)
+     if [ -z "$FIX_AGENTS" ]; then
+       echo "pr-fix: no fix-rubric agents discovered via list-fix-rubric-agents.sh — confidence gate falls through to inline judgment for this fix" >&2
+     fi
+     ```
+
+     If `$FIX_AGENTS` is empty (engine relocated, every `## Fix rubric` section was removed, or the script is missing), the surrounding loop iterates over nothing and the confidence gate runs without a structured rubric. The degradation message tells the user that happened — mirrors the `Marketplace skill not found: <name> — degrading to inline rubric` pattern the marketplace-rubric loads above use.
+
+     For each fix-applicable agent whose trigger condition matches the current file's surface, Read the agent file in full and use the body — particularly the `## Fix rubric` section — as the rubric for the confidence gate.
+
+     Today this set is `web3.md` (when `<HAS_WEB3>` and the file imports a contract-interaction library or contains contract addresses/calldata), `ci-security.md` (when `<HAS_WORKFLOWS>`), `release-integrity.md` (when `<HAS_RELEASE>`), `dependencies.md` (when `<HAS_DEPS>`), and `docs.md` (when the fix touches `AGENTS.md` / `CLAUDE.md` itself, or any file under `.agents/personas/` / `.claude/agents/` / similar). As new fix-applicable agents land in the engine, this loop picks them up automatically — no edit to this skill required.
+
+     For Web3 fixes specifically, also re-read the Web3 portion of `<PROJECT_CONTEXT>` plus any `SECURITY.md` / `audits/*.md` discovered. For doc / spec-layering fixes, also confirm the bidirectional-backlink invariant: changes to a persona's `applies:` frontmatter must atomically update the corresponding callout in the spec, and vice versa. A one-sided fix is incomplete.
 
    These rubrics inform the confidence gate. Example: a comment saying "wrap this in `useMemo`" on code inside a Server Component is a HIGH→LOW confidence drop because the vercel-react-best-practices rubric flags `useMemo` as not applicable in Server Components — skip the fix and reply explaining why.
 

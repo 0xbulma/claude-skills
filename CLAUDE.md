@@ -21,14 +21,18 @@ Users install via `/plugin marketplace add 0xbulma/claude-skills` → `/plugin i
         └─ lists ─→ plugins/local/
                           │
                           ├─ .claude-plugin/plugin.json
-                          ├─ skills/{pr-switch,pr-review-local,pr-review-gh,pr-fix,setup,pr-create,extract-plan,tib-create,tip-create,tib-ship}/SKILL.md
-                          ├─ lib/pr-review-base.md   ← shared Steps 3–6
-                          ├─ personas/*.md               ← 11 versioned reviewers (5 baseline + 6 conditional)
+                          ├─ skills/
+                          │   ├─ {pr-switch,pr-review-local,pr-review-gh,pr-fix,setup,
+                          │   │    pr-create,extract-plan,tib-create,tip-create,tib-ship}/SKILL.md
+                          │   └─ pr-review-engine/
+                          │       ├─ SKILL.md             ← shared Steps 3–6 (the dispatcher)
+                          │       ├─ agents/*.md          ← 15 versioned reviewers (6 baseline + 9 conditional)
+                          │       └─ references/*.md      ← shared rubrics loaded on demand by agents
                           ├─ hooks/hooks.json            ← SessionStart auto-install
                           └─ bin/install-prereqs.sh      ← idempotent prereq install
 ```
 
-One-way arrow: skills delegate Steps 3–6 to `lib/`, which loops over `personas/`. Nothing points back up.
+One-way arrow: the four PR-flow skills (`pr-review-gh`, `pr-review-local`, `pr-fix`, `tib-ship`) delegate Steps 3–6 to `skills/pr-review-engine/SKILL.md`, which walks `skills/pr-review-engine/agents/*.md` and fans out one sub-agent per matching file. The engine is a real skill following the Anthropic `skill-creator` pattern (`SKILL.md` + `agents/` + `references/`). Nothing points back up.
 
 ## Rubric prereqs (auto-installed)
 
@@ -36,21 +40,21 @@ One-way arrow: skills delegate Steps 3–6 to `lib/`, which loops over `personas
 
 | Skill | Source | Backs persona |
 |---|---|---|
-| `vercel-react-best-practices` | `vercel-labs/agent-skills` | `react-next-best-practices` |
-| `vercel-composition-patterns` | `vercel-labs/agent-skills` | `react-next-best-practices` |
-| `vercel-react-native-skills` | `vercel-labs/agent-skills` | `react-next-best-practices` (RN files only) |
-| `next-best-practices` | `vercel-labs/next-skills` | `react-next-best-practices` |
-| `next-cache-components` | `vercel-labs/next-skills` | `react-next-best-practices` |
-| `building-components` | `vercel/components.build` | `react-next-best-practices` + `ui-styling-accessibility` |
-| `web-design-guidelines` | `vercel-labs/agent-skills` | `ui-styling-accessibility` |
-| `tailwind-design-system` | `wshobson/agents` | `ui-styling-accessibility` |
-| `ai-elements` | `vercel/ai-elements` | `ai-sdk-best-practices` + `ui-styling-accessibility` |
-| `streamdown` | `vercel/streamdown` | `ai-sdk-best-practices` + `ui-styling-accessibility` |
-| `ai-sdk` | `vercel/ai` | `ai-sdk-best-practices` |
-| `turborepo` | `vercel/turborepo` | `ci-release-security` (turbo.json) |
-| `deploy-to-vercel` | `vercel-labs/agent-skills` | `ci-release-security` (vercel.json / deploy) |
-| `vercel-cli-with-tokens` | `vercel-labs/agent-skills` | `ci-release-security` (vercel CLI) |
-| `github-actions-docs` | `xixu-me/skills` | `ci-release-security` |
+| `vercel-react-best-practices` | `vercel-labs/agent-skills` | `react-next` |
+| `vercel-composition-patterns` | `vercel-labs/agent-skills` | `react-next` |
+| `vercel-react-native-skills` | `vercel-labs/agent-skills` | `react-next` (RN files only) |
+| `next-best-practices` | `vercel-labs/next-skills` | `react-next` |
+| `next-cache-components` | `vercel-labs/next-skills` | `react-next` |
+| `building-components` | `vercel/components.build` | `react-next`, `styling`, `accessibility` |
+| `web-design-guidelines` | `vercel-labs/agent-skills` | `styling`, `accessibility` |
+| `tailwind-design-system` | `wshobson/agents` | `styling` |
+| `ai-elements` | `vercel/ai-elements` | `ai-sdk`, `styling` |
+| `streamdown` | `vercel/streamdown` | `ai-sdk`, `styling` |
+| `ai-sdk` | `vercel/ai` | `ai-sdk` |
+| `turborepo` | `vercel/turborepo` | `ci-security` (when turbo.json touched) |
+| `deploy-to-vercel` | `vercel-labs/agent-skills` | `release-integrity` (when vercel.json / deploy touched) |
+| `vercel-cli-with-tokens` | `vercel-labs/agent-skills` | `release-integrity` (when vercel CLI touched) |
+| `github-actions-docs` | `xixu-me/skills` | `ci-security` |
 | `agent-browser` | `vercel-labs/agent-browser` | utility (browser automation) |
 | `find-skills` | `vercel-labs/skills` | utility (skill discovery) |
 | `before-and-after` | `vercel-labs/before-and-after` | utility (visual diff) |
@@ -74,7 +78,7 @@ The SessionStart hook fires on each `claude` invocation, so prereqs install the 
 
 ## Path resolution inside `SKILL.md`
 
-- **Plugin-local files** (lib, personas, bin): use `${CLAUDE_PLUGIN_ROOT}/...`. The variable is set by Claude Code to the installed plugin's root directory.
+- **Plugin-local files** (`skills/pr-review-engine/{SKILL.md,agents,references}`, `bin`): use `${CLAUDE_PLUGIN_ROOT}/...`. The variable is set by Claude Code to the installed plugin's root directory.
 - **Rubric skills**: discover at run time via Bash:
   ```bash
   find ~/.claude -type f -name SKILL.md -path "*<skill-name>*" 2>/dev/null | head -1
@@ -87,7 +91,7 @@ Three levels of versioning, all semver:
 
 1. **Plugin version** — `plugins/local/.claude-plugin/plugin.json` `version`. The release pin users see in `/plugin marketplace update`. Bump on every release.
 2. **Per-skill version** — `version:` in each `SKILL.md` frontmatter. Lets you ship a skill-level changelog without bumping the whole plugin.
-3. **Per-persona version** — `version:` in each `personas/*.md` frontmatter. Personas evolve fast; per-file versioning lets us track rubric drift independently.
+3. **Per-agent version** — `version:` in each `plugins/local/skills/pr-review-engine/agents/*.md` frontmatter. Agents evolve fast; per-file versioning lets us track rubric drift independently.
 
 Semver rules:
 
@@ -95,9 +99,9 @@ Semver rules:
 - **Minor** — new persona, new conditional flag, new prereq, new rubric section.
 - **Major** — trigger-flag rename, severity-grading change, or any breaking output-shape change.
 
-## Persona contract
+## Agent contract
 
-Every file in `plugins/local/personas/` has YAML frontmatter:
+Every file in `plugins/local/skills/pr-review-engine/agents/` has YAML frontmatter:
 
 ```yaml
 ---
@@ -115,11 +119,11 @@ severity-guidance: |
 ---
 ```
 
-Adding a persona = drop a new file in `plugins/local/personas/`. If `kind: conditional`, also extend the flag-detection block in Step 4 of `plugins/local/lib/pr-review-base.md`. No `plugin.json` edit needed.
+Adding an agent = drop a new file in `plugins/local/skills/pr-review-engine/agents/`. If `kind: conditional`, also extend the flag-detection block in Step 4 of `plugins/local/skills/pr-review-engine/SKILL.md`. No `plugin.json` edit needed.
 
 ## Forking notes
 
-- **Per-org Web3 SDK**: extend the `<HAS_WEB3>` detector in `lib/pr-review-base.md` Step 4 and `skills/pr-fix/SKILL.md` Steps 4.5/5d.1/12 to include `@your-org/*`.
+- **Per-org Web3 SDK**: extend the `<HAS_WEB3>` detector in `skills/pr-review-engine/SKILL.md` Step 4 and `skills/pr-fix/SKILL.md` Steps 4.5/5d.1/12 to include `@your-org/*`.
 - **Different prereq set**: edit the `PREREQS` heredoc in `bin/install-prereqs.sh`. Each line is `<install-target-name> <owner/repo@skill>`. The persona Bash `find` will discover whatever lands in `~/.claude/skills/<name>/`.
 
 ## Testing

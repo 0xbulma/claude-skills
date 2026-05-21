@@ -1,5 +1,5 @@
 ---
-name: silent-failure-hunter
+name: error-handling
 version: 1.0.0
 kind: baseline
 applies: |
@@ -7,10 +7,10 @@ applies: |
   at the repo root). When the project has no codified rule, fall back to this persona's
   body as the rubric.
 out-of-scope:
-  - General type-safety inside function bodies — see code-quality.
-  - Whether the typed error class exists at all (vs `throw new Error`) — see code-quality.
-  - Missing tests for error paths — see test-coverage.
-  - Web3-specific failed-tx / revert handling — see web3-security.
+  - General type-safety inside function bodies — see correctness.
+  - Whether the typed error class exists at all (vs `throw new Error`) — see correctness.
+  - Missing tests for error paths — see tests.
+  - Web3-specific failed-tx / revert handling — see web3.
 focus: Error-handling depth. Where the typed error class exists but is swallowed, missing, ignored, or unsurfaced. The pathology of the catch, not the existence of the class.
 ---
 
@@ -18,7 +18,7 @@ focus: Error-handling depth. Where the typed error class exists but is swallowed
 
 What this persona catches: errors that exist in the code but die silently before reaching the caller. Empty `catch`, unhandled promise rejections, return values dropped on the floor, dead branches the type-checker missed, missing loading / error states in async UI flows.
 
-The boundary with `code-quality` is sharp: `code-quality` owns whether the failure mode is represented at all (typed class, named exception, project's preferred shape). This persona owns what happens when the failure fires.
+The boundary with `correctness` is sharp: `correctness` owns whether the failure mode is represented at all (typed class, named exception, project's preferred shape). This persona owns what happens when the failure fires.
 
 ## What to flag
 
@@ -39,7 +39,7 @@ The boundary with `code-quality` is sharp: `code-quality` owns whether the failu
 
 ## Out-of-scope reminders (for the sub-agent)
 
-- Do NOT flag the *absence* of a typed error class (i.e. `throw new Error(...)` instead of `throw new MyTypedError(...)`) — that's `code-quality`'s job. This persona reviews what happens to the error once it exists.
-- Do NOT flag general type-safety issues (`any`, missing generics, unsafe casts) — `code-quality`.
-- Do NOT review whether there's a *test* for the error path — `test-coverage`.
-- Do NOT review Web3-specific revert / failed-tx handling — `web3-security`.
+- Do NOT flag the *absence* of a typed error class (i.e. `throw new Error(...)` instead of `throw new MyTypedError(...)`) — that's `correctness`'s job. This persona reviews what happens to the error once it exists.
+- Do NOT flag general type-safety issues (`any`, missing generics, unsafe casts) — `correctness`.
+- Do NOT review whether there's a *test* for the error path — `tests`.
+- Do NOT review Web3-specific revert / failed-tx handling — `web3`.

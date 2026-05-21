@@ -1,5 +1,5 @@
 ---
-name: test-coverage
+name: tests
 version: 1.0.0
 kind: baseline
 applies: |
@@ -7,9 +7,9 @@ applies: |
   section). When the project has no codified rule, fall back to this persona's
   body as the rubric.
 out-of-scope:
-  - Correctness of the test assertions themselves — see code-quality.
-  - Missing tests for CI workflows — see ci-release-security.
-  - Mock-vs-fork choice for Web3 paths — see web3-security.
+  - Correctness of the test assertions themselves — see correctness.
+  - Missing tests for CI workflows — see ci-security, release-integrity, dependencies.
+  - Mock-vs-fork choice for Web3 paths — see web3.
 focus: |
   Missing or weak tests for changes in source code. Enforces the project's
   test-layout convention (colocation `src/Foo.test.ts` next to `src/Foo.ts`
@@ -63,8 +63,8 @@ When the project does NOT specify a layout, do not invent a rule — just flag m
 
 ## Out-of-scope reminders (for the sub-agent)
 
-- Do NOT review the test assertions themselves for correctness — `code-quality`.
-- Do NOT review CI workflow / publish-flow test coverage — `ci-release-security`.
+- Do NOT review the test assertions themselves for correctness — `correctness`.
+- Do NOT review CI workflow / publish-flow test coverage — `ci-security`, `release-integrity`, `dependencies`.
 - Do NOT propose new test infrastructure or fixtures — point at the project's existing helpers when present.
 - Do NOT flag missing tests for internal (non-exported) symbols when the public surface covering them is tested.
 - The colocation-vs-`test/` rules apply only going forward (new code + refactors). Do NOT flag the existing layout of unrelated packages.

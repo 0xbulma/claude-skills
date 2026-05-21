@@ -1,7 +1,7 @@
 ---
 name: tip-create
 version: 0.2.0
-description: Scaffold a new TIP (Technical Implementation Plan — the concrete "how to build" doc that pairs with one or more TIBs). Use when user says /local:tip-create, "create a TIP", "new implementation plan", "scaffold doc-as-code", or "implementation template". Takes a feature title; optionally one or more --tib <path> args to seed Context/Goals/Non-Goals. Auto-maintains Sibling TIP(s) back-links across TIPs that share a parent TIB. Bakes a per-block TDD/format/lint/typecheck/test loop into every implementation phase.
+description: Scaffold a new TIP (Technical Implementation Plan — the concrete "how to build" doc that pairs with one or more TIBs). Use when user says /local:tip-create, "create a TIP", "new implementation plan", "scaffold doc-as-code", or "implementation template". Takes a feature title; optionally one or more --tib path arguments to seed Context/Goals/Non-Goals. Auto-maintains Sibling TIP(s) back-links across TIPs that share a parent TIB. Bakes a per-block TDD/format/lint/typecheck/test loop into every implementation phase.
 ---
 
 # /local:tip-create — Scaffold a New TIP

@@ -1,12 +1,12 @@
 ---
 name: pr-review-gh
 version: 2.0.0
-description: Local PR review bot. Reviews an open pull request with parallel specialized agents (5 baseline + conditional Web3, React/Next, UI/styling) and posts findings as inline GitHub review comments using event=COMMENT (never auto-approves). Optionally watches for new commits and re-reviews. Use when user says /local:pr-review-gh, "review PR", "watch PR", or "babysit PR". Takes a PR number as argument.
+description: Local PR review bot. Reviews an open pull request with parallel specialized agents (6 baseline + conditional Web3, React/Next, styling, accessibility, AI-SDK, CI-security, release-integrity, dependencies, route-UI) and posts findings as inline GitHub review comments using event=COMMENT (never auto-approves). Optionally watches for new commits and re-reviews. Use when user says /local:pr-review-gh, "review PR", "watch PR", or "babysit PR". Takes a PR number as argument.
 ---
 
 # review-gh — Local PR Review (post to GitHub)
 
-Reviews a GitHub Pull Request locally using parallel specialized agents from `${CLAUDE_PLUGIN_ROOT}/lib/pr-review-base.md`, posts findings as inline review comments with `event="COMMENT"`. Never auto-approves or requests changes — leaves the verdict to humans. Optionally schedules a 2-minute watcher cron via `--watch`.
+Reviews a GitHub Pull Request locally using parallel specialized agents from `${CLAUDE_PLUGIN_ROOT}/skills/pr-review-engine/SKILL.md`, posts findings as inline review comments with `event="COMMENT"`. Never auto-approves or requests changes — leaves the verdict to humans. Optionally schedules a 2-minute watcher cron via `--watch`.
 
 ## Usage
 
@@ -65,12 +65,12 @@ Extract `<BASE_BRANCH>`, `<HEAD_BRANCH>`, `<HEAD_SHA>`, `state`. Validate that a
 
 ## Steps 3–6: Shared review base
 
-**Read `${CLAUDE_PLUGIN_ROOT}/lib/pr-review-base.md` and follow Steps 3–6 there**, with these inputs:
+**Read `${CLAUDE_PLUGIN_ROOT}/skills/pr-review-engine/SKILL.md` and follow Steps 3–6 there**, with these inputs:
 
-- `<DIFF_SOURCE>` = `pr`
-- `<HEAD_REF>` = `origin/<HEAD_BRANCH>`
+- `DIFF_SOURCE` = `pr`
+- `HEAD_REF` = `origin/<HEAD_BRANCH>`
 
-The base produces: `<FINDINGS>`, `<FAILED_AGENTS>`, `<COUNTS>`, `<TOTAL_AGENTS_LAUNCHED>`.
+The base produces: `FINDINGS`, `DROPPED_FINDINGS`, `FAILED_AGENTS`, `COUNTS`, `DROPPED_COUNTS`, `TOTAL_AGENTS_LAUNCHED`.
 
 ## Step 7: Post the review as `COMMENT`
 
@@ -108,8 +108,23 @@ Always use `"event": "COMMENT"` — never auto-approve or request changes.
 | Medium | X |
 | Low | X |
 
+<details>
+<summary>Audit trail — <N> finding(s) dropped by the engine's scope filter</summary>
+
+| Drop reason | Count |
+|---|---|
+| File out of scope | DROPPED_COUNTS.out_of_scope |
+| Line pre-existing (outside ±15 of any changed line) | DROPPED_COUNTS.pre_existing |
+| Markdown documentation example | DROPPED_COUNTS.doc_example |
+
+If the filter dropped something it shouldn't have, the kept-finding list above will need a manual top-up — see the dropped JSON in `/tmp/pr-review-gh-<PR_NUMBER>-dropped.json` for the full details (file/line/description/distance_to_nearest_changed_line).
+
+</details>
+
 _Automated parallel review. Re-runs on new commits if `--watch` is active._
 ```
+
+The `<details>` audit block is rendered only when `DROPPED_FINDINGS` is non-empty; omit the entire block when zero findings were dropped (no noise on clean diffs). Write `DROPPED_FINDINGS` to `/tmp/pr-review-gh-<PR_NUMBER>-dropped.json` so the user can inspect locally — do NOT post the full dropped list inline (most are noise).
 
 If `<FAILED_AGENTS>` is non-zero, prepend `> WARNING: <FAILED_AGENTS> of <TOTAL_AGENTS_LAUNCHED> agents failed (<names>) — review may be incomplete.` to the body.
 
@@ -198,7 +213,7 @@ CYCLE START:
 4. NEW COMMIT DETECTED:
    Say "New commit detected on PR #<PR_NUMBER>: ${CYCLE_HEAD_SHA}. Running full review..."
 
-5. **Read `${CLAUDE_PLUGIN_ROOT}/lib/pr-review-base.md` and follow Steps 3–6 there**, with:
+5. **Read `${CLAUDE_PLUGIN_ROOT}/skills/pr-review-engine/SKILL.md` and follow Steps 3–6 there**, with:
    - <DIFF_SOURCE> = pr
    - <HEAD_REF> = origin/<HEAD_BRANCH>
    - <BASE_BRANCH> = <BASE_BRANCH>

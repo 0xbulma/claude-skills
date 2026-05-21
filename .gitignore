@@ -4,3 +4,4 @@
 .idea/
 .vscode/
 .context/
+test/__pycache__/

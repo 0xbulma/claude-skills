@@ -1,7 +1,7 @@
 ---
 name: pr-switch
 version: 1.0.0
-description: Switch the local checkout to a GitHub PR's head branch. Accepts a PR URL, `owner/repo#num` shorthand, or a bare PR number; verifies the PR belongs to the current repo; resolves a dirty tree interactively (stash/commit/discard/abort); checks out via `gh pr checkout`. Use when user says /local:pr-switch, "checkout this PR", "switch to this PR's branch", "check out PR <link>", or "get me on the branch for <pr>".
+description: Switch the local checkout to a GitHub PR's head branch. Accepts a PR URL, `owner/repo#num` shorthand, or a bare PR number; verifies the PR belongs to the current repo; resolves a dirty tree interactively (stash/commit/discard/abort); checks out via `gh pr checkout`. Use when user says /local:pr-switch, "checkout this PR", "switch to this PR's branch", "check out a PR link", or "get me on the branch for this PR".
 ---
 
 # /local:pr-switch — Switch to a PR's Branch

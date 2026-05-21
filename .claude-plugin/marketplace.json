@@ -1,12 +1,12 @@
 {
   "name": "claude-skills",
   "owner": { "name": "0xbulma" },
-  "description": "PR review and PR fix slash commands for Claude Code.",
+  "description": "Self-review PRs locally — multi-agent code review, fix application, and the TIB/TIP paper trail, without the cloud review bill.",
   "plugins": [
     {
       "name": "local",
       "source": "./plugins/local",
-      "description": "Ten skills: PR branch switching, pre-PR local review, GitHub PR review, PR-fix automation, draft PR creation, doc-to-Linear plan extraction, TIB scaffolding, TIP (implementation plan) scaffolding, yolo TIB-ship orchestrator (scaffold-implement-self-review loop, TDD per block), and rubric setup. 11-persona review library (5 baseline + 6 conditional, including route-level runtime validation via agent-browser) + SessionStart hook that auto-installs 18 Vercel/community rubric skills.",
+      "description": "Self-review a PR before it ships — locally, in seconds, without paying for a cloud review service. Ten user-invokable slash commands (pr-switch, pr-review-local, pr-review-gh, pr-fix, pr-create, tib-create, tip-create, tib-ship, extract-plan, setup) plus a shared pr-review-engine dispatcher. Reviews fan out a multi-agent panel against the diff (correctness, error-handling, performance, security, CI, deps, React/Next, AI-SDK, Web3, accessibility, runtime-validation, ...), post inline comments to GitHub when desired (never auto-approves), and apply mechanical fixes on demand. Tuned for TS/React/Vercel codebases.",
       "category": "code-review",
       "keywords": ["pr-review", "code-review", "github", "personas", "vercel", "react", "typescript", "linear", "adr", "rfc", "tib"]
     }

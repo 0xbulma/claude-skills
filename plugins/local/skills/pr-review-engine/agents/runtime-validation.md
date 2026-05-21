@@ -2,18 +2,18 @@
 name: runtime-validation
 version: 0.2.0
 kind: conditional
-trigger: <HAS_ROUTE_UI>
+trigger: HAS_ROUTE_UI
 applies: |
   Runtime behavior of UI surfaces touched by the diff. Loads the `agent-browser`
   marketplace skill rubric when available; falls back to `mcp__claude-in-chrome__*`
-  tools if `agent-browser` is absent. Auto-fires from `lib/pr-review-base.md` when
-  `<HAS_ROUTE_UI>` is true (a route/page/layout/api-route or SPA entry changed) —
+  tools if `agent-browser` is absent. Auto-fires from `pr-review-engine/SKILL.md` when
+  HAS_ROUTE_UI is true (a route/page/layout/api-route or SPA entry changed) —
   not on arbitrary component changes, to avoid booting a dev server on every
   review. `tib-ship` excludes this persona from its iteration loop and runs it
   once after static convergence so dev-server boot is not paid N times.
 out-of-scope:
-  - Static type, lint, or correctness issues — see `code-quality` / `silent-failure-hunter`.
-  - Accessibility lint against static markup — see `ui-styling-accessibility`.
+  - Static type, lint, or correctness issues — see `correctness` / `error-handling`.
+  - Accessibility lint against static markup — see `styling`, `accessibility`.
   - Performance profiling beyond "did the page render and stay quiet?" — out of scope here.
 focus: |
   Does the change actually work in a browser? Boot the dev server, navigate the
@@ -27,14 +27,14 @@ severity-guidance: |
              clearly broken interaction), console error on the changed route,
              network 5xx triggered by the changed UI.
   medium   — console warning new to this diff, layout shift that violates a
-             clearly-stated guideline, performance regression > 2× on a measured
-             route.
+             clearly-stated guideline, performance regression more than 2× on
+             a measured route.
   low      — minor visual nit visible in screenshots; defer to author judgment.
 ---
 
 # Runtime Validation
 
-Static review tells you what the code *says*. This persona tells you what it *does*. Fires when `<HAS_ROUTE_UI>` is true — i.e. the diff touches a route-reachable file (Next App Router page/layout/api-route, Next Pages Router page, SPA pages/routes/entry, or `index.html`) **and** the repo has a discoverable dev-server script. Deliberately narrower than `<HAS_REACT>` so we don't boot a dev server on every component-only diff. See `lib/pr-review-base.md` Step 4 for the full trigger definition. Within `tib-ship`, the persona is excluded from the iteration loop and invoked exactly once after static convergence (Step 6) so the dev-server boot is paid 1×, not N×.
+Static review tells you what the code *says*. This persona tells you what it *does*. Fires when `<HAS_ROUTE_UI>` is true — i.e. the diff touches a route-reachable file (Next App Router page/layout/api-route, Next Pages Router page, SPA pages/routes/entry, or `index.html`) **and** the repo has a discoverable dev-server script. Deliberately narrower than `<HAS_REACT>` so we don't boot a dev server on every component-only diff. See `pr-review-engine/SKILL.md` Step 4 for the full trigger definition. Within `tib-ship`, the persona is excluded from the iteration loop and invoked exactly once after static convergence (Step 6) so the dev-server boot is paid 1×, not N×.
 
 ## Run-time setup
 

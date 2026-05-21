@@ -1,16 +1,16 @@
 ---
-name: react-next-best-practices
+name: react-next
 version: 1.0.0
 kind: conditional
-trigger: <HAS_REACT>
+trigger: HAS_REACT
 applies: |
   The project's spec on React / Next.js best practices, if any. The persona
   ALSO loads marketplace skill rubrics at run time — see Step 5 below.
 out-of-scope:
-  - General type-safety / code smells — see code-quality.
-  - Error-handling depth — see silent-failure-hunter.
-  - Tailwind class consistency / accessibility — see ui-styling-accessibility.
-  - Test coverage for React components — see test-coverage.
+  - General type-safety / code smells — see correctness.
+  - Error-handling depth — see error-handling.
+  - Tailwind class consistency / accessibility — see styling, accessibility.
+  - Test coverage for React components — see tests.
 focus: React / Next.js patterns — Server Components, `'use client'` discipline, hooks, effects, composition, React 19 APIs.
 canonical-rules: |
   Marketplace skills (discover paths at run time — see Run-time setup below):
@@ -66,7 +66,7 @@ Use the contents of whichever rubric files loaded — plus this persona's built-
 ### Hooks + effects
 
 - Effect dependency arrays with stale closures (functions captured before the dependency they should track).
-- Missing cleanup in `useEffect` (event listeners, intervals, subscriptions, `AbortController`).
+- Missing cleanup in `useEffect` (event listeners, intervals, subscriptions, `AbortController`). Cross-check `references/effect-cleanup.md`.
 - Memoization that creates new identities every render — `useMemo(() => [a, b], [])` with the array re-created each call defeats the purpose.
 - Missing or wrong key props on lists (using index when items can reorder; missing keys entirely).
 - Unnecessary client-side state when URL state or server state would do.
@@ -87,7 +87,7 @@ Use the contents of whichever rubric files loaded — plus this persona's built-
 
 ## Out-of-scope reminders (for the sub-agent)
 
-- Do NOT review generic type-safety or `any` usage — `code-quality`.
-- Do NOT review Tailwind classes, design tokens, or accessibility — `ui-styling-accessibility`.
-- Do NOT flag missing tests for React components — `test-coverage`.
-- Do NOT review error-handling depth in async hooks (missing `.catch()` etc.) — `silent-failure-hunter`.
+- Do NOT review generic type-safety or `any` usage — `correctness`.
+- Do NOT review Tailwind classes, design tokens, or accessibility — `styling`, `accessibility`.
+- Do NOT flag missing tests for React components — `tests`.
+- Do NOT review error-handling depth in async hooks (missing `.catch()` etc.) — `error-handling`.
