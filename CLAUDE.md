@@ -89,7 +89,7 @@ The SessionStart hook fires on each `claude` invocation, so prereqs install the 
 
 Three levels of versioning, all semver:
 
-1. **Plugin version** — `plugins/local/.claude-plugin/plugin.json` `version`. The release pin users see in `/plugin marketplace update`. Bump on every release.
+1. **Plugin version** — `plugins/local/.claude-plugin/plugin.json` `version`. The release pin users see in `/plugin marketplace update`. **Bump on every PR that changes anything in `plugins/local/`** (description, SKILL.md, agents, hooks, bin). The marketplace updater keys cache invalidation off this field — if it doesn't move, `/plugin marketplace update` short-circuits and existing installs keep serving the stale cache forever (the description text, the `agents/` roster, the install script, all of it). The README and `plugin.json` description can disagree with reality for weeks and you'd never know.
 2. **Per-skill version** — `version:` in each `SKILL.md` frontmatter. Lets you ship a skill-level changelog without bumping the whole plugin.
 3. **Per-agent version** — `version:` in each `plugins/local/skills/pr-review-engine/agents/*.md` frontmatter. Agents evolve fast; per-file versioning lets us track rubric drift independently.
 
@@ -119,7 +119,7 @@ severity-guidance: |
 ---
 ```
 
-Adding an agent = drop a new file in `plugins/local/skills/pr-review-engine/agents/`. If `kind: conditional`, also extend the flag-detection block in Step 4 of `plugins/local/skills/pr-review-engine/SKILL.md`. No `plugin.json` edit needed.
+Adding an agent = drop a new file in `plugins/local/skills/pr-review-engine/agents/`. If `kind: conditional`, also extend the flag-detection block in Step 4 of `plugins/local/skills/pr-review-engine/SKILL.md`. **Bump the plugin `version`** in `plugins/local/.claude-plugin/plugin.json` (see Versioning above) — without it, existing installs will never see the new agent.
 
 ## Forking notes
 
@@ -141,3 +141,4 @@ Validates manifest shape, skill discovery, frontmatter (including the `version:`
 - **Don't reintroduce `<HOME>` template substitution.** The marketplace install model handles paths automatically.
 - **Don't try to declare rubric skills in `plugin.json` `dependencies`.** That field only resolves other plugins (different ecosystem from `npx skills`). Use the SessionStart hook + setup skill instead.
 - **`npx` consumes stdin** when called inside a `while read` loop — always pass `</dev/null` to the install command.
+- **Don't forget to bump `plugin.json` `version` in any PR touching `plugins/local/`.** `/plugin marketplace update` keys cache invalidation off this field — leave it the same and every existing install keeps serving the old description, old agent roster, old hook script. This bit us once: 2.3.0 sat unchanged for two days while the description and the agents/ layout were rewritten in place; users kept seeing the original 11-persona text from the May 19 install. See the Versioning section for semver rules (patch/minor/major).
