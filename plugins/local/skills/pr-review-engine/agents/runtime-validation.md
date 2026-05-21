@@ -2,12 +2,12 @@
 name: runtime-validation
 version: 0.2.0
 kind: conditional
-trigger: <HAS_ROUTE_UI>
+trigger: HAS_ROUTE_UI
 applies: |
   Runtime behavior of UI surfaces touched by the diff. Loads the `agent-browser`
   marketplace skill rubric when available; falls back to `mcp__claude-in-chrome__*`
   tools if `agent-browser` is absent. Auto-fires from `pr-review-engine/SKILL.md` when
-  `<HAS_ROUTE_UI>` is true (a route/page/layout/api-route or SPA entry changed) —
+  HAS_ROUTE_UI is true (a route/page/layout/api-route or SPA entry changed) —
   not on arbitrary component changes, to avoid booting a dev server on every
   review. `tib-ship` excludes this persona from its iteration loop and runs it
   once after static convergence so dev-server boot is not paid N times.
@@ -27,8 +27,8 @@ severity-guidance: |
              clearly broken interaction), console error on the changed route,
              network 5xx triggered by the changed UI.
   medium   — console warning new to this diff, layout shift that violates a
-             clearly-stated guideline, performance regression > 2× on a measured
-             route.
+             clearly-stated guideline, performance regression more than 2× on
+             a measured route.
   low      — minor visual nit visible in screenshots; defer to author judgment.
 ---
 

@@ -1,7 +1,7 @@
 ---
 name: extract-plan
 version: 1.0.0
-description: Convert a technical document (TIB / ADR / RFC / design doc) into a Linear project plan with milestones and issues. Use when user says /local:extract-plan, "extract plan from <doc>", "turn this TIB into Linear issues", "create Linear issues from this design doc", or "make a project plan from this RFC". Takes a doc path and optional Linear project name/ID.
+description: Convert a technical document (TIB / ADR / RFC / design doc) into a Linear project plan with milestones and issues. Use when user says /local:extract-plan, "extract plan from this doc", "turn this TIB into Linear issues", "create Linear issues from this design doc", or "make a project plan from this RFC". Takes a doc path and optional Linear project name/ID.
 ---
 
 # /local:extract-plan — Document → Linear Project Plan

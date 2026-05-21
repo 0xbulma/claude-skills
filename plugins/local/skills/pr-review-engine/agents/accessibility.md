@@ -2,7 +2,7 @@
 name: accessibility
 version: 1.0.0
 kind: conditional
-trigger: <HAS_TAILWIND> OR <HAS_STYLING>
+trigger: HAS_TAILWIND OR HAS_STYLING
 applies: |
   WCAG 2.1 AA + the project's a11y spec, if any.
 out-of-scope:

@@ -2,7 +2,7 @@
 name: dependencies
 version: 1.0.0
 kind: conditional
-trigger: <HAS_DEPS>
+trigger: HAS_DEPS
 applies: |
   The project's dependency-hygiene spec, if any (look for AGENTS.md /
   CLAUDE.md sections on dependency policy, plus SECURITY.md). When the
@@ -57,7 +57,7 @@ Fires when `<HAS_DEPS>` is true — any changed file matches:
 
 ## Fix rubric
 
-(Consumed by `pr-fix` and by the engine when invoked with `<MODE>=fix`.)
+(Consumed by `pr-fix` when generating fixes for individual review comments.)
 
 Mechanical fixes only:
 - Pin a runtime-`dependencies` entry's semver range from `^x.y.z` /

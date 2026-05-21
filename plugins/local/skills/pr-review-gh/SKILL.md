@@ -67,10 +67,10 @@ Extract `<BASE_BRANCH>`, `<HEAD_BRANCH>`, `<HEAD_SHA>`, `state`. Validate that a
 
 **Read `${CLAUDE_PLUGIN_ROOT}/skills/pr-review-engine/SKILL.md` and follow Steps 3–6 there**, with these inputs:
 
-- `<DIFF_SOURCE>` = `pr`
-- `<HEAD_REF>` = `origin/<HEAD_BRANCH>`
+- `DIFF_SOURCE` = `pr`
+- `HEAD_REF` = `origin/<HEAD_BRANCH>`
 
-The base produces: `<FINDINGS>`, `<FAILED_AGENTS>`, `<COUNTS>`, `<TOTAL_AGENTS_LAUNCHED>`.
+The base produces: `FINDINGS`, `DROPPED_FINDINGS`, `FAILED_AGENTS`, `COUNTS`, `DROPPED_COUNTS`, `TOTAL_AGENTS_LAUNCHED`.
 
 ## Step 7: Post the review as `COMMENT`
 
@@ -108,8 +108,23 @@ Always use `"event": "COMMENT"` — never auto-approve or request changes.
 | Medium | X |
 | Low | X |
 
+<details>
+<summary>Audit trail — <N> finding(s) dropped by the engine's scope filter</summary>
+
+| Drop reason | Count |
+|---|---|
+| File out of scope | DROPPED_COUNTS.out_of_scope |
+| Line pre-existing (outside ±15 of any changed line) | DROPPED_COUNTS.pre_existing |
+| Markdown documentation example | DROPPED_COUNTS.doc_example |
+
+If the filter dropped something it shouldn't have, the kept-finding list above will need a manual top-up — see the dropped JSON in `/tmp/pr-review-gh-<PR_NUMBER>-dropped.json` for the full details (file/line/description/distance_to_nearest_changed_line).
+
+</details>
+
 _Automated parallel review. Re-runs on new commits if `--watch` is active._
 ```
+
+The `<details>` audit block is rendered only when `DROPPED_FINDINGS` is non-empty; omit the entire block when zero findings were dropped (no noise on clean diffs). Write `DROPPED_FINDINGS` to `/tmp/pr-review-gh-<PR_NUMBER>-dropped.json` so the user can inspect locally — do NOT post the full dropped list inline (most are noise).
 
 If `<FAILED_AGENTS>` is non-zero, prepend `> WARNING: <FAILED_AGENTS> of <TOTAL_AGENTS_LAUNCHED> agents failed (<names>) — review may be incomplete.` to the body.
 

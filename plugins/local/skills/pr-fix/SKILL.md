@@ -422,8 +422,6 @@ For each file with findings, build a complete understanding:
 
      For Web3 fixes specifically, also re-read the Web3 portion of `<PROJECT_CONTEXT>` plus any `SECURITY.md` / `audits/*.md` discovered. For doc / spec-layering fixes, also confirm the bidirectional-backlink invariant: changes to a persona's `applies:` frontmatter must atomically update the corresponding callout in the spec, and vice versa. A one-sided fix is incomplete.
 
-     Equivalent dispatcher call (for batch fix scenarios where the caller wants the engine to fan out the fix-rubric agents on a whole diff rather than per-comment): invoke `pr-review-engine` with `<MODE>=fix`. The engine applies the same `## Fix rubric` filter and runs the matching agents in parallel.
-
    These rubrics inform the confidence gate. Example: a comment saying "wrap this in `useMemo`" on code inside a Server Component is a HIGH→LOW confidence drop because the vercel-react-best-practices rubric flags `useMemo` as not applicable in Server Components — skip the fix and reply explaining why.
 
 ### 6b: Confidence gate

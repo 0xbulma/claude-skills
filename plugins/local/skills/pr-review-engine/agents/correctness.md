@@ -5,8 +5,9 @@ kind: baseline
 applies: |
   The project's spec for type discipline, forbidden patterns, and naming
   (look for AGENTS.md / CLAUDE.md at the repo root or per-package). Cite
-  the section by number / title when present in `<PROJECT_CONTEXT>`. When
-  no spec exists, use this persona's body as the rubric.
+  the section by number / title when present in the project-context bundle
+  the dispatcher injects. When no spec exists, use this persona's body as
+  the rubric.
 out-of-scope:
   - Error-handling depth / swallowed catches / missing error states — see error-handling.
   - Mechanical style (formatter, organize-imports, indent) — see the project's lint contract; this persona owns *type* discipline not *style*.

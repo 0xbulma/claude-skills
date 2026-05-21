@@ -2,7 +2,7 @@
 name: react-next
 version: 1.0.0
 kind: conditional
-trigger: <HAS_REACT>
+trigger: HAS_REACT
 applies: |
   The project's spec on React / Next.js best practices, if any. The persona
   ALSO loads marketplace skill rubrics at run time — see Step 5 below.

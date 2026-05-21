@@ -2,7 +2,7 @@
 name: release-integrity
 version: 1.0.0
 kind: conditional
-trigger: <HAS_RELEASE>
+trigger: HAS_RELEASE
 applies: |
   The project's release / publish flow spec, if any (look for AGENTS.md /
   CLAUDE.md sections on release automation, publish flow, plus SECURITY.md).
@@ -81,7 +81,7 @@ Fires when `<HAS_RELEASE>` is true — any changed file matches:
 
 ## Fix rubric
 
-(Consumed by `pr-fix` and by the engine when invoked with `<MODE>=fix`.)
+(Consumed by `pr-fix` when generating fixes for individual review comments.)
 
 Mechanical fixes only:
 - Add `--provenance` to an `npm publish` / `pnpm publish` invocation

@@ -1,7 +1,7 @@
 {
   "name": "local",
   "version": "2.3.0",
-  "description": "PR navigation, review, fix, creation, and Linear/TIB-TIP authoring slash commands. Ten user-invokable skills (pr-switch, pr-review-local, pr-review-gh, pr-fix, setup, pr-create, extract-plan, tib-create, tip-create, tib-ship) plus the pr-review-engine dispatcher skill, and a 15-agent review library (6 baseline + 9 conditional, including route-level runtime validation).",
+  "description": "Ship a PR through self-review locally — no cloud bill, no waiting for CI. Reviews the diff with a multi-agent panel (correctness, error-handling, perf, security, CI, accessibility, React/Next, AI-SDK, Web3, runtime-validation, ...), posts the findings to GitHub as inline review comments (never auto-approves), applies safe fixes when asked, and scaffolds the TIB → TIP → PR paper trail along the way. Local-first by design; pairs with the Anthropic Skills marketplace.",
   "author": { "name": "0xbulma", "url": "https://github.com/0xbulma" },
   "license": "MIT",
   "homepage": "https://github.com/0xbulma/claude-skills"

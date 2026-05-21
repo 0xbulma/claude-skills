@@ -125,15 +125,18 @@ setup() {
   [ "$count" = "15" ]
 }
 
-@test "engine mode=fix filter set matches agents with ## Fix rubric" {
-  # Locks in the invariant the engine SKILL.md states in prose: mode=fix
-  # filters to web3, ci-security, release-integrity, dependencies, docs.
-  # Catches: a fix-rubric section accidentally removed, a fix-rubric
-  # section added to an agent that pr-fix doesn't expect, or a rename
-  # that desyncs the prose list from the on-disk filter set.
+@test "pr-fix fix-rubric agent set is exactly the five expected" {
+  # pr-fix's confidence gate (Step 6a) walks $AGENTS_DIR for files with a
+  # `## Fix rubric` section. Locks the set so a fix-rubric section can't
+  # be silently added/removed without an explicit test update.
+  # The bundled script `scripts/list-fix-rubric-agents.sh` is the single
+  # source of truth for the discovery; this test pins its output.
   expected="ci-security dependencies docs release-integrity web3"
-  actual=$(grep -l '^## Fix rubric$' "$AGENTS_DIR"/*.md | xargs -n1 basename | sed 's/\.md$//' | sort | tr '\n' ' ' | sed 's/ $//')
-  [ "$actual" = "$expected" ] || { echo "engine prose lists: $expected"; echo "agents w/ section: $actual" >&2; return 1; }
+  actual=$("$SKILLS_DIR/pr-review-engine/scripts/list-fix-rubric-agents.sh" \
+           | xargs -n1 basename \
+           | sed 's/\.md$//' \
+           | sort | tr '\n' ' ' | sed 's/ $//')
+  [ "$actual" = "$expected" ] || { echo "expected: $expected"; echo "got:      $actual" >&2; return 1; }
 }
 
 @test "each agent has name matching its filename" {
@@ -167,6 +170,49 @@ setup() {
   done
 }
 
+@test "no XML angle brackets anywhere in skill or agent frontmatter" {
+  # Anthropic Skills guide, Reference B: "Forbidden in frontmatter: XML
+  # angle brackets (< >) - security restriction". The engine and consumer
+  # skills, plus every agent file, must be free of `<` / `>` inside the
+  # `---` ... `---` frontmatter block. Body prose may still use the
+  # brackets to mark template placeholders — that's not in scope here.
+  set +e
+  bad=""
+  while IFS= read -r f; do
+    found=$(awk '
+      # Only enter frontmatter mode when the FIRST non-empty line is ---.
+      # Markdown horizontal rules (--- inside body) must not increment state.
+      NR == 1 && /^---$/ { in_fm = 1; next }
+      in_fm && /^---$/   { exit }
+      in_fm && /[<>]/    { printf "%s:%d:%s\n", FILENAME, NR, $0 }
+    ' "$f")
+    if [ -n "$found" ]; then
+      bad="${bad}\n${found}"
+    fi
+  done < <(find "$SKILLS_DIR" -type f -name '*.md')
+  set -e
+  [ -z "$bad" ] || { printf 'XML brackets found in frontmatter:%b\n' "$bad" >&2; return 1; }
+}
+
+@test "engine ships scripts/ with the three bundled helpers" {
+  # The Anthropic Skills guide (p. 26) recommends scripting deterministic
+  # logic instead of expressing it only in language. The three helpers
+  # implement the diff-line build, the finding validator, and the
+  # fix-rubric agent discovery — locking the file list catches a future
+  # edit that removes any of them.
+  SCRIPTS_DIR="$SKILLS_DIR/pr-review-engine/scripts"
+  [ -x "$SCRIPTS_DIR/build-changed-lines.sh" ]   || { echo "missing/non-executable: build-changed-lines.sh" >&2; return 1; }
+  [ -x "$SCRIPTS_DIR/validate-findings.py" ]     || { echo "missing/non-executable: validate-findings.py" >&2; return 1; }
+  [ -x "$SCRIPTS_DIR/list-fix-rubric-agents.sh" ]|| { echo "missing/non-executable: list-fix-rubric-agents.sh" >&2; return 1; }
+}
+
+@test "engine ships the three new references/ files" {
+  REFS_DIR="$SKILLS_DIR/pr-review-engine/references"
+  for f in changed-lines.md scope-filter.md calibration.md; do
+    [ -f "$REFS_DIR/$f" ] || { echo "missing reference: $REFS_DIR/$f" >&2; return 1; }
+  done
+}
+
 @test "engine and setup skills set disable-model-invocation: true" {
   # These two skills are invoked by other skills (engine) or by the user
   # via a separate path (setup). They must not appear in the slash-command
@@ -179,10 +225,13 @@ setup() {
 
 @test "engine SKILL.md documents the scope-filter contract" {
   # The Step 6 sub-step 1 contract names three drop categories and the
-  # <CHANGED_LINES> tolerance window. Locks these in so a future edit
+  # CHANGED_LINES tolerance window. Locks these in so a future edit
   # that removes one of the structural filters fails the test.
+  # Identifiers in the engine prose are written without `< >` brackets
+  # since the Anthropic Skills guide forbids brackets in frontmatter
+  # — the body inherits the same convention for consistency.
   engine="$SKILLS_DIR/pr-review-engine/SKILL.md"
-  grep -q '<CHANGED_LINES>' "$engine"        || { echo "engine missing <CHANGED_LINES> contract" >&2; return 1; }
+  grep -q 'CHANGED_LINES' "$engine"          || { echo "engine missing CHANGED_LINES contract" >&2; return 1; }
   grep -q 'DROPPED_OUT_OF_SCOPE' "$engine"   || { echo "engine missing DROPPED_OUT_OF_SCOPE counter" >&2; return 1; }
   grep -q 'DROPPED_PRE_EXISTING' "$engine"   || { echo "engine missing DROPPED_PRE_EXISTING counter" >&2; return 1; }
   grep -q 'DROPPED_DOC_EXAMPLE' "$engine"    || { echo "engine missing DROPPED_DOC_EXAMPLE counter" >&2; return 1; }
@@ -209,11 +258,15 @@ setup() {
   # must actually carry a "Cross-check `references/X.md`" pointer line.
   # Catches: a Consumers entry that survives a rename/refactor when
   # the agent's pointer was removed.
+  #
+  # Only treat backticked tokens as consumer names if a matching agent
+  # file actually exists under $AGENTS_DIR/<name>.md — otherwise we'd
+  # pick up incidental code-formatted prose like `eval()` or `0x...`.
   for ref_file in "$REFS_DIR"/secrets.md "$REFS_DIR"/injection.md "$REFS_DIR"/effect-cleanup.md; do
     ref_name=$(basename "$ref_file")
-    # Extract consumer agent names from the `## Consumers` section
     consumers=$(awk '/^## Consumers/,EOF' "$ref_file" | grep -oE '`[a-z][a-z0-9-]*`' | tr -d '`' | sort -u)
     for c in $consumers; do
+      [ -f "$AGENTS_DIR/$c.md" ] || continue
       grep -q "references/$ref_name" "$AGENTS_DIR/$c.md" 2>/dev/null \
         || { echo "$ref_file lists $c as consumer but $AGENTS_DIR/$c.md has no 'references/$ref_name' pointer" >&2; return 1; }
     done

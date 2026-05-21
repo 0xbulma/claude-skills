@@ -2,7 +2,7 @@
 name: ai-sdk
 version: 1.0.0
 kind: conditional
-trigger: <HAS_AI_SDK>
+trigger: HAS_AI_SDK
 applies: |
   The project's spec for Vercel AI SDK usage, if any. The persona ALSO loads
   the Vercel-published AI SDK skills as run-time rubric — see Run-time setup.

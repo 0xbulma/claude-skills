@@ -100,10 +100,10 @@ fi
 
 **Read `${CLAUDE_PLUGIN_ROOT}/skills/pr-review-engine/SKILL.md` and follow Steps 3–6 there**, with:
 
-- `<DIFF_SOURCE>` = `local` (include uncommitted diff)
-- `<HEAD_REF>` = `HEAD`
+- `DIFF_SOURCE` = `local` (include uncommitted diff)
+- `HEAD_REF` = `HEAD`
 
-The base produces: `<FINDINGS>`, `<FAILED_AGENTS>`, `<COUNTS>`, `<TOTAL_AGENTS_LAUNCHED>`.
+The base produces: `FINDINGS`, `DROPPED_FINDINGS`, `FAILED_AGENTS`, `COUNTS`, `DROPPED_COUNTS`, `TOTAL_AGENTS_LAUNCHED`.
 
 ## Step 7: Output to terminal
 
@@ -136,7 +136,17 @@ Format directly in the conversation:
 ...
 ```
 
-**Order findings by severity (Critical → High → Medium → Low), not by file.** Re-sort the `<FINDINGS>` list from Step 6 by severity DESC, then file path ASC, then line ASC, and group under one heading per severity bucket. Each finding shows its `<file_path>:L<line>` inline so the reader can jump to the source. Omit any severity heading whose bucket is empty.
+**Order findings by severity (Critical → High → Medium → Low), not by file.** Re-sort the `FINDINGS` list from Step 6 by severity DESC, then file path ASC, then line ASC, and group under one heading per severity bucket. Each finding shows its `<file_path>:L<line>` inline so the reader can jump to the source. Omit any severity heading whose bucket is empty.
+
+### Audit trail (dropped findings)
+
+If `DROPPED_FINDINGS` is non-empty, after the severity sections print a one-line summary:
+
+```
+Audit: dropped <N> finding(s) by scope filter (<out_of_scope> file-level, <pre_existing> line-level, <doc_example> doc-example). Full list: /tmp/pr-review-local-dropped.json
+```
+
+Write the `DROPPED_FINDINGS` array to `/tmp/pr-review-local-dropped.json` (each entry tagged with `drop_reason` and, for line-level drops, `distance_to_nearest_changed_line`) so the user can `cat` it and re-introduce a finding if the filter was wrong. Skip both the line and the file entirely when zero findings were dropped.
 
 ### Sentinel lines
 

@@ -99,7 +99,7 @@ If the project has no persona system, skip this entire section.
 
 ## Fix rubric
 
-(Consumed by `pr-fix` and by the engine when invoked with `<MODE>=fix`.)
+(Consumed by `pr-fix` when generating fixes for individual review comments.)
 
 Mechanical fixes only:
 - Add missing JSDoc / TSDoc on a newly exported symbol, following the

@@ -2,7 +2,7 @@
 name: web3
 version: 1.0.0
 kind: conditional
-trigger: <HAS_WEB3>
+trigger: HAS_WEB3
 applies: |
   The project's Web3 security rules (look for AGENTS.md / CLAUDE.md sections on
   contract interactions, security invariants, the Action layer if the project
@@ -86,7 +86,7 @@ The boundary between the project and the chain. Authoritative rules — if the p
 
 ## Fix rubric
 
-(Consumed by `pr-fix` and by the engine when invoked with `<MODE>=fix`.)
+(Consumed by `pr-fix` when generating fixes for individual review comments.)
 
 Apply fixes only when the suggestion is unambiguous and local — typed
 ABI inlining for a `0x` literal, adding a `chainId` check before a

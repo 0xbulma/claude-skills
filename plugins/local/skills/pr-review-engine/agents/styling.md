@@ -2,10 +2,10 @@
 name: styling
 version: 1.0.0
 kind: conditional
-trigger: <HAS_TAILWIND> OR <HAS_STYLING>
+trigger: HAS_TAILWIND OR HAS_STYLING
 applies: |
   The project's design-system spec, if any. Loads the tailwind-design-system
-  marketplace skill rubric at run time when <HAS_TAILWIND> is true.
+  marketplace skill rubric at run time when HAS_TAILWIND is true.
 out-of-scope:
   - Accessibility (ARIA, keyboard, focus, alt) — see accessibility.
   - React patterns (Server Components, hooks, effects) — see react-next.
@@ -15,7 +15,7 @@ focus: |
   Styling consistency, Tailwind discipline, design-token usage.
 canonical-rules: |
   Marketplace skills (see references/marketplace-rubrics.md for discovery):
-   - tailwind-design-system   (Tailwind v4 — when <HAS_TAILWIND>)
+   - tailwind-design-system   (Tailwind v4 — when HAS_TAILWIND is true)
    - web-design-guidelines    (Vercel Web Interface Guidelines — always)
    - building-components      (composable component design)
 ---

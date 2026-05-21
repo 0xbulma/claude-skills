@@ -2,7 +2,7 @@
 name: ci-security
 version: 1.0.0
 kind: conditional
-trigger: <HAS_WORKFLOWS>
+trigger: HAS_WORKFLOWS
 applies: |
   The project's CI security spec, if any (look for AGENTS.md / CLAUDE.md
   sections on workflow security, plus SECURITY.md). When the project has
@@ -85,7 +85,7 @@ Cross-check `references/secrets.md` for the canonical severity and fix patterns;
 
 ## Fix rubric
 
-(Consumed by `pr-fix` and by the engine when invoked with `<MODE>=fix`.)
+(Consumed by `pr-fix` when generating fixes for individual review comments.)
 
 Apply only the mechanical fixes that have a single correct shape:
 - Rewrite `${{ github.event.X }}` → `env: { VAR: ${{ github.event.X }} }`
